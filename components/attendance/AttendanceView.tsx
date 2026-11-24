@@ -53,8 +53,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     (s) => s.status === "Active" && (!classFilter || s.class === classFilter)
   );
 
-  const getAvatarHTML = (photo: string, name: string) => {
-    if (photo && String(photo).trim()) {
+  const getAvatarHTML = (photo: string | undefined | null, name: string) => {
+    if (photo && String(photo).trim() && (photo.startsWith("http") || photo.startsWith("data:") || photo.startsWith("/"))) {
       return (
         <img
           src={photo}
@@ -166,7 +166,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <tr key={s.id} className="hover:bg-slate-50 transition">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {getAvatarHTML(s.photo, s.name)}
+                          {getAvatarHTML(s.photoUrl || s.photo, s.name)}
                           <div>
                             <div className="font-bold text-royal-900">
                               {s.name}{" "}
@@ -188,33 +188,30 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleSetStatus(s.id, "Present")}
-                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${
-                              st === "Present"
-                                ? "bg-emerald-600 text-white shadow-sm"
-                                : "text-slate-600 hover:bg-white"
-                            }`}
+                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${st === "Present"
+                              ? "bg-emerald-600 text-white shadow-sm"
+                              : "text-slate-600 hover:bg-white"
+                              }`}
                           >
                             Present
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSetStatus(s.id, "Absent")}
-                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${
-                              st === "Absent"
-                                ? "bg-rose-600 text-white shadow-sm"
-                                : "text-slate-600 hover:bg-white"
-                            }`}
+                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${st === "Absent"
+                              ? "bg-rose-600 text-white shadow-sm"
+                              : "text-slate-600 hover:bg-white"
+                              }`}
                           >
                             Absent
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSetStatus(s.id, "Leave")}
-                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${
-                              st === "Leave"
-                                ? "bg-amber-500 text-royal-950 shadow-sm"
-                                : "text-slate-600 hover:bg-white"
-                            }`}
+                            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-extrabold transition ${st === "Leave"
+                              ? "bg-amber-500 text-royal-950 shadow-sm"
+                              : "text-slate-600 hover:bg-white"
+                              }`}
                           >
                             Leave
                           </button>

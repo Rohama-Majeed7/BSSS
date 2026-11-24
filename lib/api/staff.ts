@@ -13,6 +13,7 @@ export interface StaffRecord {
   att: string; // "Present" | "Absent" | "Leave"
   payStatus: string; // "Paid" | "Unpaid"
   photo?: string | null;
+  photoUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

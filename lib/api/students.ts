@@ -27,6 +27,7 @@ export interface StudentRecord {
   conduct?: string | null;
   leaveReason?: string | null;
   photo?: string | null;
+  photoUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

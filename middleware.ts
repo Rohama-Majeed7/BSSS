@@ -17,6 +17,6 @@ export const config = {
      * - /_next/image (image optimization files)
      * - /favicon.ico, /manifest.json, /sw.js, /offline.html, /icons (PWA assets)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|manifest.json|sw.js|offline.html|icons|login).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|manifest.json|sw.js|offline.html|icons|login|logo.png).*)",
   ],
 };

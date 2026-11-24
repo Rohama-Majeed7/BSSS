@@ -1,7 +1,7 @@
 // Bright Stars Science School & Academy PWA Service Worker
 // Version: 1.0.1
 
-const CACHE_NAME = 'bss-sms-static-v2';
+const CACHE_NAME = 'bss-sms-static-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Core essential assets to precache on install
@@ -92,8 +92,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 4. Immutable Next.js Static Chunks (/_next/static/...)
-  // Cache-First with Network Fallback (safe because chunks are content-hashed)
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
+  // Cache-First with Network Fallback only in production hosts (avoid stale unhashed dev chunks on localhost)
+  const isLocalDevHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  if ((url.pathname.startsWith('/_next/static/') && !isLocalDevHost) || url.pathname.startsWith('/icons/')) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {

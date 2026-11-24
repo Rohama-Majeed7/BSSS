@@ -34,8 +34,8 @@ export const ExamsView: React.FC<ExamsViewProps> = ({
     return true;
   });
 
-  const getAvatarHTML = (photo: string, name: string) => {
-    if (photo && String(photo).trim()) {
+  const getAvatarHTML = (photo: string | undefined | null, name: string) => {
+    if (photo && String(photo).trim() && (photo.startsWith("http") || photo.startsWith("data:") || photo.startsWith("/"))) {
       return (
         <img
           src={photo}
@@ -148,7 +148,7 @@ export const ExamsView: React.FC<ExamsViewProps> = ({
                     <tr key={r.id} className="hover:bg-slate-50 transition">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {getAvatarHTML(s.photo, s.name)}
+                          {getAvatarHTML(s.photoUrl || s.photo, s.name)}
                           <div>
                             <div className="font-extrabold text-royal-900">{s.name}</div>
                             <div className="text-[11px] font-mono text-sky-800">

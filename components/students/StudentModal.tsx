@@ -3,12 +3,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { SCHOOL_CLASSES } from "@/lib/constants";
 import { formatClassLabel, calculateAge, getNameInitials } from "@/lib/utils";
+import {
+  uploadPhotoToNeon,
+  deletePhotoFromServer,
+  resolveDisplayPhotoUrl,
+} from "@/lib/photoUpload";
 import { Icon } from "@/components/ui/Icon";
 
 interface StudentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (studentData: any) => Promise<void> | void;
+  onPhotoRemoved?: (studentId: number) => void;
   editStudent?: any;
   allStudents: any[];
 }
@@ -17,6 +23,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onPhotoRemoved,
   editStudent,
   allStudents,
 }) => {
@@ -39,10 +46,31 @@ export const StudentModal: React.FC<StudentModalProps> = ({
   const [photo, setPhoto] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
+  const [photoKey, setPhotoKey] = useState("");
+  const [savedPhotoKey, setSavedPhotoKey] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const blobPreviewRef = useRef<string | null>(null);
+
+  const revokeBlobPreview = () => {
+    if (blobPreviewRef.current) {
+      URL.revokeObjectURL(blobPreviewRef.current);
+      blobPreviewRef.current = null;
+    }
+  };
 
   useEffect(() => {
+    return () => revokeBlobPreview();
+  }, []);
+
+  const editStudentId = editStudent?.id ?? null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    revokeBlobPreview();
+
     if (editStudent) {
       setName(editStudent.name || "");
       setAdmNo(editStudent.admNo || "");
@@ -60,7 +88,11 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setFee(Number(editStudent.fee || 2000));
       setAddress(editStudent.address || "");
       setStatus(editStudent.status || "Active");
-      setPhoto(editStudent.photo || "");
+      // Preserve S3 object key in photoKey/savedPhotoKey, and renderable URL in photo
+      const dbPhotoKey = editStudent.photo || "";
+      setSavedPhotoKey(dbPhotoKey);
+      setPhotoKey(dbPhotoKey);
+      setPhoto(resolveDisplayPhotoUrl(editStudent));
     } else {
       setName("");
       setFather("");
@@ -77,6 +109,8 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setFee(2000);
       setAddress("Basti Jaisal Wain, Jhang Road, Muzaffargarh");
       setStatus("Active");
+      setSavedPhotoKey("");
+      setPhotoKey("");
       setPhoto("");
 
       // Suggest next Adm No
@@ -88,7 +122,11 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setAdmNo(String(maxNum + 1));
     }
     setSubmitError("");
-  }, [editStudent, isOpen, allStudents]);
+    setPhotoError("");
+    setIsUploadingPhoto(false);
+    setIsRemovingPhoto(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editStudentId, isOpen]);
 
   if (!isOpen) return null;
 
@@ -101,49 +139,97 @@ export const StudentModal: React.FC<StudentModalProps> = ({
     setAdmNo(String(maxNum + 1));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDim = 400;
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-        setPhoto(canvas.toDataURL("image/jpeg", 0.85));
-      };
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+
+    setPhotoError("");
+    const prevUnsavedKey = photoKey && photoKey !== savedPhotoKey ? photoKey : "";
+
+    try {
+      setIsUploadingPhoto(true);
+      const { objectKey, previewUrl } = await uploadPhotoToNeon(file, "students");
+
+      revokeBlobPreview();
+      blobPreviewRef.current = previewUrl;
+      setPhotoKey(objectKey);
+      setPhoto(previewUrl);
+      setPhotoError("");
+
+      // Clean up a previously uploaded unsaved photo from this modal session
+      if (prevUnsavedKey && prevUnsavedKey !== objectKey) {
+        deletePhotoFromServer({
+          photoKey: prevUnsavedKey,
+          category: "students",
+        }).catch((err) => console.warn("Failed to clean up replaced unsaved photo:", err));
+      }
+    } catch (error: any) {
+      console.error("Photo upload error:", error);
+      setPhotoError(error?.message || "Failed to upload photo. Please try again.");
+    } finally {
+      setIsUploadingPhoto(false);
+      if (e.target) e.target.value = "";
+    }
   };
 
-  const handleRemovePhoto = () => {
-    setPhoto("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleRemovePhoto = async () => {
+    if (isUploadingPhoto || isRemovingPhoto || isSubmitting) return;
+
+    try {
+      setPhotoError("");
+      setIsRemovingPhoto(true);
+
+      const hasUnsavedUpload = Boolean(photoKey && photoKey !== savedPhotoKey);
+      if (hasUnsavedUpload) {
+        await deletePhotoFromServer({
+          photoKey,
+          category: "students",
+        });
+      }
+
+      if (editStudent?.id && savedPhotoKey) {
+        await deletePhotoFromServer({
+          photoKey: savedPhotoKey,
+          category: "students",
+          recordId: editStudent.id,
+        });
+        setSavedPhotoKey("");
+        onPhotoRemoved?.(editStudent.id);
+      }
+
+      revokeBlobPreview();
+      setPhoto("");
+      setPhotoKey("");
+      setPhotoError("");
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error: any) {
+      console.error("Remove photo error:", error);
+      setPhotoError(error?.message || "Could not remove photo. Please try again.");
+    } finally {
+      setIsRemovingPhoto(false);
     }
+  };
+
+  const handleModalClose = () => {
+    if (isSubmitting || isUploadingPhoto || isRemovingPhoto) return;
+    if (photoKey && photoKey !== savedPhotoKey) {
+      deletePhotoFromServer({
+        photoKey,
+        category: "students",
+      }).catch((err) => console.warn("Failed to clean up cancelled upload:", err));
+    }
+    revokeBlobPreview();
+    onClose();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isUploadingPhoto || isRemovingPhoto) return;
 
     if (!admNo.trim() || !name.trim() || !father.trim() || !cls) {
       setSubmitError("Admission No, Student Name, Father Name and Class are all required.");
@@ -171,8 +257,9 @@ export const StudentModal: React.FC<StudentModalProps> = ({
         fee,
         address,
         status,
-        photo,
+        photo: photoKey || null,
       });
+      revokeBlobPreview();
       onClose();
     } catch (err: any) {
       setSubmitError(err?.message || "Failed to save student record. Please try again.");
@@ -192,8 +279,8 @@ export const StudentModal: React.FC<StudentModalProps> = ({
           </h3>
           <button
             type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
+            onClick={handleModalClose}
+            disabled={isSubmitting || isUploadingPhoto || isRemovingPhoto}
             className="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none disabled:opacity-40"
           >
             &times;
@@ -217,6 +304,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
                     src={photo}
                     alt="Student Photo Preview"
                     className="w-full h-full object-cover"
+                    onError={() => setPhoto("")}
                   />
                 ) : (
                   <div className="text-center p-2">
@@ -236,9 +324,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
                 <label className="block text-xs font-extrabold text-royal-950 uppercase tracking-wider">
                   Student Photo (For ID Card &amp; Records)
                 </label>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Upload a passport-style portrait. If uploaded, it will appear on the Student ID Card; otherwise, name initials will be displayed.
-                </p>
+
               </div>
 
               <input
@@ -250,30 +336,50 @@ export const StudentModal: React.FC<StudentModalProps> = ({
               />
 
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-3.5 py-1.5 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
-                >
-                  <Icon name="camera" className="w-3.5 h-3.5" />
-                  <span>{photo ? "Change Photo" : "Upload Photo"}</span>
-                </button>
-
-                {photo && (
+                {!(photo || photoKey) || isUploadingPhoto ? (
                   <button
                     type="button"
+                    disabled={isUploadingPhoto || isRemovingPhoto || isSubmitting}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3.5 py-1.5 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
+                  >
+                    <Icon name="camera" className="w-3.5 h-3.5" />
+                    <span>{isUploadingPhoto ? "Uploading..." : "Upload Photo"}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isRemovingPhoto || isSubmitting}
                     onClick={handleRemovePhoto}
-                    className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition"
+                    className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition disabled:opacity-50"
                   >
                     <Icon name="trash" className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Remove Photo</span>
+                    <span>{isRemovingPhoto ? "Removing..." : "Remove Photo"}</span>
                   </button>
                 )}
 
-                <span className="text-[10px] text-slate-400 font-medium">
-                  PNG, JPG or WebP (Auto-optimized)
-                </span>
+                {isUploadingPhoto && (
+                  <span className="text-[11px] text-royal-700 font-bold flex items-center gap-1.5">
+                    <svg className="animate-spin w-3.5 h-3.5 text-royal-700" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Uploading ...
+                  </span>
+                )}
+
+                {!isUploadingPhoto && (
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    PNG, JPG or WebP (Auto-optimized)
+                  </span>
+                )}
               </div>
+
+              {photoError && (
+                <p className="text-[11px] font-bold text-rose-600 mt-1">
+                  ⚠ {photoError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -357,11 +463,7 @@ export const StudentModal: React.FC<StudentModalProps> = ({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="font-bold text-slate-700">Date of Birth *</label>
-                {dob && (
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-royal-900">
-                    Age: {ageObj.text}
-                  </span>
-                )}
+
               </div>
               <input
                 type="date"
@@ -503,15 +605,15 @@ export const StudentModal: React.FC<StudentModalProps> = ({
           <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
             <button
               type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
+              onClick={handleModalClose}
+              disabled={isSubmitting || isUploadingPhoto || isRemovingPhoto}
               className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingPhoto || isRemovingPhoto}
               className="px-6 py-2.5 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSubmitting && (

@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", ico: "dashboard", color: "text-gold-400" },
-    { id: "students", label: "Students (14 Classes)", ico: "students", color: "text-sky-400" },
+    { id: "students", label: "Students ", ico: "students", color: "text-sky-400" },
     { id: "attendance", label: "Daily Attendance", ico: "attendance", color: "text-emerald-400" },
     { id: "fees", label: "Fees & Receipts", ico: "fees", color: "text-amber-400" },
     { id: "results", label: "Exams & Result Cards", ico: "results", color: "text-gold-400" },
@@ -89,12 +89,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <h1 className="text-xs sm:text-sm font-extrabold tracking-tight text-white leading-snug truncate">
                   {SCHOOL_INFO.name}
                 </h1>
-                <p className="text-[10px] sm:text-[11px] text-sky-300 font-semibold truncate">
-                  &amp; Academy • EMIS: {SCHOOL_INFO.emis}
+                <p className="text-[10px] sm:text-[11px] text-sky-200 font-semibold truncate">
+                  EMIS: {SCHOOL_INFO.emis}
                 </p>
-                <p className="font-urdu text-xs text-gold-400 mt-0.5 leading-normal truncate">
-                  {SCHOOL_INFO.urduName}
-                </p>
+
               </div>
             </div>
 
@@ -143,19 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </nav>
 
-          {/* PWA Install Button when available */}
-          {mounted && isInstallable && !isInstalled && (
-            <div className="p-3 pt-1 border-t border-royal-800/80">
-              <button
-                type="button"
-                onClick={promptInstall}
-                className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-royal-950 font-extrabold text-xs shadow-md transition touch-manipulation"
-              >
-                <Icon name="download" className="w-4 h-4 text-royal-950" />
-                <span>Install Bright Stars App</span>
-              </button>
-            </div>
-          )}
+
         </div>
 
 

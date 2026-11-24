@@ -2,8 +2,9 @@
 
 import React from "react";
 import Icon from "@/components/ui/Icon";
+import PhotoAvatar from "@/components/ui/PhotoAvatar";
 import ActionsDropdown from "@/components/ui/ActionsDropdown";
-import { calcTeacherNetPay, getNameInitials, buildWhatsAppURL, buildFacultyIDCardWhatsAppMsg } from "@/lib/utils";
+import { calcTeacherNetPay, buildWhatsAppURL, buildFacultyIDCardWhatsAppMsg } from "@/lib/utils";
 
 interface StaffViewProps {
   teachers: any[];
@@ -26,23 +27,6 @@ export const StaffView: React.FC<StaffViewProps> = ({
   onViewPaySlip,
   onPrintPayrollSheet,
 }) => {
-  const getAvatarHTML = (photo: string, name: string) => {
-    if (photo && String(photo).trim()) {
-      return (
-        <img
-          src={photo}
-          alt={name}
-          className="w-10 h-10 rounded-full object-cover border border-purple-200 shadow-sm flex-shrink-0"
-        />
-      );
-    }
-    return (
-      <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-800 border border-purple-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
-        {getNameInitials(name)}
-      </div>
-    );
-  };
-
   return (
     <section className="tab-panel p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
       {/* Top Header */}
@@ -111,7 +95,13 @@ export const StaffView: React.FC<StaffViewProps> = ({
                     <tr key={t.id} className="hover:bg-slate-50 transition">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {getAvatarHTML(t.photo, t.name)}
+                          <PhotoAvatar
+                            photoUrl={t.photoUrl}
+                            photo={t.photo}
+                            name={t.name}
+                            imgClassName="w-10 h-10 rounded-full object-cover border border-purple-200 shadow-sm flex-shrink-0"
+                            fallbackClassName="w-10 h-10 rounded-full bg-purple-100 text-purple-800 border border-purple-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0"
+                          />
                           <div>
                             <div className="font-extrabold text-royal-900">{t.name}</div>
                             <div className="text-[11px] font-mono text-slate-500">

@@ -3,6 +3,8 @@ const path = require('path');
 
 const dirs = [
   '.next/server/pages',
+  '.next/server/chunks',
+  '.next/server/vendor-chunks',
   '.next/server/app',
   '.next/server/app/[tab]',
   '.next/server/app/login',

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Icon from "@/components/ui/Icon";
+import PhotoAvatar from "@/components/ui/PhotoAvatar";
 import ActionsDropdown from "@/components/ui/ActionsDropdown";
 import { SCHOOL_CLASSES } from "@/lib/constants";
 import {
@@ -10,7 +11,6 @@ import {
   getNetStudentFee,
   getFeeStatus,
   buildWhatsAppURL,
-  getNameInitials,
   buildStudentIDCardWhatsAppMsg,
 } from "@/lib/utils";
 import { SCHOOL_INFO } from "@/lib/constants";
@@ -57,23 +57,6 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
       return matchSearch && matchClass && matchStatus;
     });
   }, [students, search, classFilter, statusFilter]);
-
-  const getAvatarHTML = (photo: string, name: string) => {
-    if (photo && String(photo).trim()) {
-      return (
-        <img
-          src={photo}
-          alt={name}
-          className="w-10 h-10 rounded-full object-cover border border-royal-200 shadow-sm flex-shrink-0"
-        />
-      );
-    }
-    return (
-      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
-        {getNameInitials(name)}
-      </div>
-    );
-  };
 
   return (
     <section className="tab-panel p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
@@ -222,7 +205,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     <tr key={s.id} className="hover:bg-slate-50 transition align-middle">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {getAvatarHTML(s.photo, s.name)}
+                          <PhotoAvatar photoUrl={s.photoUrl} photo={s.photo} name={s.name} />
                           <div>
                             <div className="font-extrabold text-royal-900">{s.name}</div>
                             <div className="text-[11px] font-mono font-bold text-sky-800">

@@ -46,18 +46,18 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-royal-800/20 overflow-hidden">
         {/* Top Branding Banner */}
         <div className="bg-gradient-to-r from-royal-950 via-royal-900 to-sky-900 text-white p-6 sm:p-8 text-center relative">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white p-1 border-4 border-gold-400 mx-auto overflow-hidden shadow-xl flex items-center justify-center">
-            <div className="w-full h-full rounded-full bg-royal-900 flex flex-col items-center justify-center text-center p-0.5">
-              <span className="text-[9px] font-extrabold text-gold-400 leading-none">BSS</span>
-              <span className="text-[6px] text-white font-semibold leading-tight">SCIENCE</span>
-              <span className="text-[5px] text-sky-300 leading-none">323320474</span>
-            </div>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white p-0.5 border-4 border-gold-400 mx-auto overflow-hidden shadow-xl flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="Bright Stars Science School Logo"
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
           <h1 className="text-base sm:text-lg font-extrabold tracking-tight mt-3 leading-snug">
             {SCHOOL_INFO.name}
           </h1>
           <p className="text-[11px] text-sky-200 font-semibold mt-0.5">
-            &amp; Academy • EMIS: {SCHOOL_INFO.emis}
+            EMIS: {SCHOOL_INFO.emis}
           </p>
           <p className="font-urdu text-sm text-gold-300 mt-1">{SCHOOL_INFO.urduName}</p>
           <div className="mt-3 inline-block px-3.5 py-1 rounded-full bg-gold-400 text-royal-950 text-[10px] font-extrabold uppercase tracking-wider">

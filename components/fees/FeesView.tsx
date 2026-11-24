@@ -100,8 +100,8 @@ export const FeesView: React.FC<FeesViewProps> = ({
     window.open(next.waUrl, "_blank", "noopener,noreferrer");
   };
 
-  const getAvatarHTML = (photo: string, name: string) => {
-    if (photo && String(photo).trim()) {
+  const getAvatarHTML = (photo: string | undefined | null, name: string) => {
+    if (photo && String(photo).trim() && (photo.startsWith("http") || photo.startsWith("data:") || photo.startsWith("/"))) {
       return (
         <img
           src={photo}
@@ -272,7 +272,7 @@ export const FeesView: React.FC<FeesViewProps> = ({
                     <tr key={s.id} className="hover:bg-slate-50 transition">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          {getAvatarHTML(s.photo, s.name)}
+                          {getAvatarHTML(s.photoUrl || s.photo, s.name)}
                           <div>
                             <div className="font-bold text-royal-900">{s.name}</div>
                             <div className="text-[11px] text-slate-500">

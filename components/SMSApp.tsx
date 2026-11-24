@@ -248,6 +248,24 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
     excelhub: "Excel (.xlsx) & Master Registers Hub",
   };
 
+  const handleStudentPhotoRemoved = (studentId: number) => {
+    setStudents((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, photo: null, photoUrl: null } : s))
+    );
+    setEditingStudent((prev: any) =>
+      prev && prev.id === studentId ? { ...prev, photo: null, photoUrl: null } : prev
+    );
+  };
+
+  const handleTeacherPhotoRemoved = (teacherId: number) => {
+    setTeachers((prev) =>
+      prev.map((t) => (t.id === teacherId ? { ...t, photo: null, photoUrl: null } : t))
+    );
+    setEditingTeacher((prev: any) =>
+      prev && prev.id === teacherId ? { ...prev, photo: null, photoUrl: null } : prev
+    );
+  };
+
   // Student CRUD handlers
   const handleSaveStudent = async (data: any) => {
     try {
@@ -788,6 +806,7 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
         isOpen={isStudentModalOpen}
         onClose={() => setIsStudentModalOpen(false)}
         onSave={handleSaveStudent}
+        onPhotoRemoved={handleStudentPhotoRemoved}
         editStudent={editingStudent}
         allStudents={students}
       />
@@ -814,6 +833,7 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
         isOpen={isStaffModalOpen}
         onClose={() => setIsStaffModalOpen(false)}
         onSaveTeacher={handleSaveTeacher}
+        onPhotoRemoved={handleTeacherPhotoRemoved}
         editTeacher={editingTeacher}
         allTeachers={teachers}
       />

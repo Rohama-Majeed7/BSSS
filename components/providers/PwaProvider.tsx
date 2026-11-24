@@ -90,26 +90,38 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       window.addEventListener("appinstalled", handleAppInstalled);
 
-      // 4. Register Service Worker cleanly
+      // 4. Register Service Worker only in production; clear stale dev SW/caches in development
       if ("serviceWorker" in navigator && process.env.NODE_ENV !== "test") {
-        navigator.serviceWorker
-          .register("/sw.js", { scope: "/" })
-          .then((registration) => {
-            // Check for updates
-            registration.onupdatefound = () => {
-              const installingWorker = registration.installing;
-              if (installingWorker) {
-                installingWorker.onstatechange = () => {
-                  if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
-                    console.log("[PWA] New version available.");
-                  }
-                };
-              }
-            };
-          })
-          .catch((err) => {
-            console.warn("[PWA] ServiceWorker registration skipped or failed:", err);
+        if (process.env.NODE_ENV === "production") {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .then((registration) => {
+              registration.onupdatefound = () => {
+                const installingWorker = registration.installing;
+                if (installingWorker) {
+                  installingWorker.onstatechange = () => {
+                    if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                      console.log("[PWA] New version available.");
+                    }
+                  };
+                }
+              };
+            })
+            .catch((err) => {
+              console.warn("[PWA] ServiceWorker registration skipped or failed:", err);
+            });
+        } else {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            registrations.forEach((reg) => reg.unregister());
           });
+          if ("caches" in window) {
+            caches.keys().then((keys) => {
+              keys.forEach((key) => {
+                if (key.startsWith("bss-sms-")) caches.delete(key);
+              });
+            });
+          }
+        }
       }
 
       return () => {
