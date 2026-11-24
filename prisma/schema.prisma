@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// Authentication user for the application (Auth.js + bcrypt)
+model User {
+  id           String   @id @default(cuid())
+  name         String   @default("Administrator")
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// Student profile matching HTML student-form & localStorage data structure
+model Student {
+  id          Int      @id @default(autoincrement())
+  admNo       String   @unique // Manual Admission No (e.g. "101", "BS-101")
+  receiptNo   String?  // Receipt No (e.g. "REC-2601")
+  name        String   // Student Full Name
+  father      String   // Father Name
+  fatherCnic  String?  // Father CNIC No (e.g. "32303-1234567-1")
+  class       String   // Class (Nursery, Prep, 1, 2, ... 12)
+  gender      String   // "Male" | "Female"
+  dob         String   // Date of Birth (YYYY-MM-DD)
+  bform       String   // B-Form / CNIC
+  phone       String   // Phone / WhatsApp No
+  fee         Float    // Base Monthly Tuition Fee
+  adj         Float    @default(0) // Fee adjustment / discount (+/-)
+  paid        Float    @default(0) // Paid fee amount
+  payDate     String?  // Payment Date (YYYY-MM-DD)
+  payMethod   String?  @default("Cash") // Cash, JazzCash, EasyPaisa, Bank
+  payRemarks  String?  // Payment Remarks
+  address     String   // Residential Address
+  status      String   @default("Active") // "Active" | "Left"
+  admClass    String   // Class to which admitted
+  admDate     String   // Date of admission (YYYY-MM-DD)
+  leaveClass  String?  // Class from which withdrawn (SLC)
+  leaveDate   String?  // Date of withdrawal (SLC)
+  conduct     String?  @default("Excellent") // General conduct
+  leaveReason String?  // Reason for leaving
+  photo       String?  @db.Text // Base64 compressed image data URL
+
+  // Relations
+  attendances StudentAttendance[]
+  feePayments FeePayment[]
+  examResults ExamResult[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([class])
+  @@index([status])
+}
+
+// Daily student attendance matching attendanceMap[date][studentId]
+model StudentAttendance {
+  id        Int      @id @default(autoincrement())
+  date      String   // YYYY-MM-DD
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status    String   // "Present" | "Absent" | "Leave"
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, date])
+  @@index([date])
+}
+
+// Historical fee payment records for multi-month tracking
+model FeePayment {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  receiptNo    String   // e.g. "REC-2601"
+  billingMonth String   // e.g. "November 2026"
+  amount       Float    // Amount Paid
+  adj          Float    @default(0) // Adjustment
+  payDate      String   // Payment Date (YYYY-MM-DD)
+  payMethod    String   @default("Cash")
+  payRemarks   String?
+  createdAt    DateTime @default(now())
+
+  @@index([studentId])
+  @@index([billingMonth])
+}
+
+// Exam results and Detailed Marks Certificate records
+model ExamResult {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term      String   // "1st Term", "Mid Term", "Final Term", "Monthly Test"
+  date      String   // Exam Date (YYYY-MM-DD)
+  rank      String?  // Class Rank (e.g. "1st in Class 10")
+  remarks   String?  // Remarks
+  subjects  Json     // Array of subjects: [{ name, total, obtained }]
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+}
+
+// Faculty & staff matching HTML staff-form & localStorage data structure
+model Teacher {
+  id         Int      @id @default(autoincrement())
+  empId      String   @unique // e.g. "BS-STF-01"
+  name       String   // Full Name
+  role       String   // Designation (e.g. "Senior Physics Teacher")
+  cnic       String   // CNIC No
+  phone      String   // Phone / WhatsApp No
+  basic      Float    // Basic Monthly Salary
+  allowance  Float    @default(0) // Monthly Allowances
+  deduction  Float    @default(0) // Monthly Deductions
+  att        String   @default("Present") // Attendance status: "Present" | "Absent" | "Leave"
+  payStatus  String   @default("Unpaid")  // "Paid" | "Unpaid"
+  photo      String?  @db.Text // Base64 photo data URL
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// School institutional info and branding settings
+model SchoolSetting {
+  id                  Int      @id @default(1)
+  name                String   @default("Bright Stars Science School & Academy")
+  nameUpper           String   @default("BRIGHT STARS SCIENCE SCHOOL & ACADEMY")
+  urduName            String   @default("برائٹ سٹارز سائنس سکول اینڈ اکیڈمی")
+  emis                String   @default("323320474")
+  principal           String   @default("Rahmatullah Dogar")
+  address             String   @default("Basti Jaisal Wain, Jhang Road, Muzaffargarh")
+  urduAddress         String   @default("بستی جیسل وائن، جھنگ روڈ، مظفرگڑھ")
+  logo                String?  @db.Text
+  sign                String?  @db.Text
+  feeReminderTemplate String?  @db.Text
+  reminderSentLog     Json?
+  updatedAt           DateTime @updatedAt
+}
