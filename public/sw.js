@@ -1,7 +1,7 @@
 // Bright Stars Science School & Academy PWA Service Worker
-// Version: 1.0.0
+// Version: 1.0.1
 
-const CACHE_NAME = 'bss-sms-static-v1';
+const CACHE_NAME = 'bss-sms-static-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Core essential assets to precache on install

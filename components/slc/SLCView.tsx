@@ -232,11 +232,7 @@ export const SLCView: React.FC<SLCViewProps> = ({
               {/* Header */}
               <div className="text-center border-b-2 border-royal-900 pb-3">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white p-0.5 border-2 border-gold-400 mx-auto overflow-hidden shadow-sm flex items-center justify-center">
-                  {customLogo ? (
-                    <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs font-extrabold text-royal-900">BSS</span>
-                  )}
+                  <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-sm sm:text-base font-extrabold text-royal-950 uppercase mt-1">
                   {SCHOOL_INFO.nameUpper}
@@ -319,11 +315,12 @@ export const SLCView: React.FC<SLCViewProps> = ({
                   <span className="font-bold text-slate-700">Office Clerk</span>
                 </div>
                 <div>
-                  {customSign ? (
-                    <img src={customSign} alt="Sign" className="h-6 sm:h-8 mx-auto object-contain" />
-                  ) : (
-                    <div className="text-xs text-blue-800 font-serif italic">Rahmatullah Dogar</div>
-                  )}
+                  <img
+                    src={customSign || "/principal-sign.jpg"}
+                    alt="Principal Sign"
+                    className="h-7 sm:h-9 max-w-[110px] mx-auto object-contain"
+                    style={{ mixBlendMode: "multiply" }}
+                  />
                   <span className="font-bold text-royal-950 uppercase text-[9px] sm:text-[10px]">
                     Principal (Seal &amp; Sign)
                   </span>

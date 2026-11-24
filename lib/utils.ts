@@ -116,3 +116,114 @@ export function getNameInitials(name: string): string {
   const last = parts[parts.length - 1].charAt(0).toUpperCase();
   return `${first}${last}`;
 }
+
+export function buildResultCardWhatsAppMsg(student: any, result: any): string {
+  const stats = calcExamStats(result.subjects);
+  const clsLabel = formatClassLabel(student.class);
+  const subjectsList = (result.subjects || [])
+    .map((sub: any) => `• ${sub.name}: ${sub.obtained}/${sub.total}`)
+    .join("\n");
+
+  return [
+    `🎓 *${SCHOOL_INFO.nameUpper}*`,
+    `📋 *DETAILED MARKS CERTIFICATE (DMC)*`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `👤 *Student:* ${student.name}`,
+    `🏷️ *Adm #:* ${student.admNo}`,
+    `👨 *Father:* ${student.father}`,
+    `🏫 *Class:* ${clsLabel}`,
+    `📝 *Exam Term:* ${result.term}`,
+    `📅 *Exam Date:* ${result.date}`,
+    result.rank ? `🏆 *Position:* ${result.rank}` : null,
+    ``,
+    `*SUBJECT WISE MARKS:*`,
+    subjectsList,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `📊 *Total Marks:* ${stats.total}`,
+    `🎯 *Obtained Marks:* ${stats.obtained}`,
+    `📈 *Percentage:* ${stats.pct}%`,
+    `🎖️ *Grade:* ${stats.grade}`,
+    `✅ *Result Status:* ${stats.status.toUpperCase()}`,
+    result.remarks ? `💬 *Remarks:* "${result.remarks}"` : null,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `🏫 EMIS: ${SCHOOL_INFO.emis}`,
+    `✍️ Principal: ${SCHOOL_INFO.principal}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function buildFeeReceiptWhatsAppMsg(student: any): string {
+  const netFee = getNetStudentFee(student);
+  const paid = Number(student.paid || 0);
+  const due = Math.max(0, netFee - paid);
+  const status = getFeeStatus(student);
+  const clsLabel = formatClassLabel(student.class);
+
+  return [
+    `🧾 *${SCHOOL_INFO.nameUpper}*`,
+    `💵 *OFFICIAL FEE PAYMENT RECEIPT*`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `🧾 *Receipt No:* ${student.receiptNo || `REC-${student.id}`}`,
+    `👤 *Student:* ${student.name}`,
+    `🏷️ *Adm #:* ${student.admNo}`,
+    `👨 *Father:* ${student.father}`,
+    `🏫 *Class:* ${clsLabel}`,
+    `📅 *Payment Date:* ${student.payDate || new Date().toISOString().split("T")[0]}`,
+    `💳 *Payment Method:* ${student.payMethod || "Cash"}`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `• Monthly Tuition Fee: Rs. ${Number(student.fee).toLocaleString()}`,
+    Number(student.adj || 0) !== 0 ? `• Adjustment: Rs. ${student.adj}` : null,
+    `• Net Payable Fee: Rs. ${netFee.toLocaleString()}`,
+    `• Amount Paid: Rs. ${paid.toLocaleString()}`,
+    `• Remaining Balance: Rs. ${due.toLocaleString()}`,
+    `• Payment Status: ${status === "Paid" ? "PAID ✅" : status === "Partial" ? "PARTIAL ⚠️" : "UNPAID ❌"}`,
+    student.payRemarks ? `💬 *Remarks:* ${student.payRemarks}` : null,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `Thank you for your payment. JazakAllah Khair!`,
+    `🏫 EMIS: ${SCHOOL_INFO.emis}`,
+    `✍️ Principal: ${SCHOOL_INFO.principal}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function buildStudentIDCardWhatsAppMsg(student: any): string {
+  const clsLabel = formatClassLabel(student.class);
+  return [
+    `🪪 *${SCHOOL_INFO.nameUpper}*`,
+    `🌟 *OFFICIAL STUDENT ID CARD*`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `👤 *Name:* ${student.name}`,
+    `🏷️ *Admission #:* ${student.admNo}`,
+    `👨 *Father Name:* ${student.father}`,
+    `🏫 *Class:* ${clsLabel}`,
+    `🎂 *Date of Birth:* ${student.dob || "—"}`,
+    `🆔 *B-Form / CNIC:* ${student.bform || "—"}`,
+    `📞 *Emergency Contact:* ${student.phone || "—"}`,
+    `📍 *Address:* ${student.address || SCHOOL_INFO.address}`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `🏫 EMIS: ${SCHOOL_INFO.emis}`,
+    `✍️ Verified by Principal: ${SCHOOL_INFO.principal}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function buildFacultyIDCardWhatsAppMsg(teacher: any): string {
+  return [
+    `🪪 *${SCHOOL_INFO.nameUpper}*`,
+    `🌟 *FACULTY & STAFF ID CARD*`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `👤 *Staff Name:* ${teacher.name}`,
+    `🏷️ *Employee ID:* ${teacher.empId}`,
+    `💼 *Designation:* ${teacher.role}`,
+    `🆔 *CNIC:* ${teacher.cnic || "—"}`,
+    `📞 *Phone / Contact:* ${teacher.phone || "—"}`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    `🏫 EMIS: ${SCHOOL_INFO.emis}`,
+    `✍️ Verified by Principal: ${SCHOOL_INFO.principal}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}

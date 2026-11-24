@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const signInputRef = useRef<HTMLInputElement>(null);
-  const { isInstallable, isInstalled, promptInstall } = usePwa();
+  const { isInstallable, isInstalled, promptInstall, mounted } = usePwa();
 
   const handleFile = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -83,15 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-4 bg-royal-950/70 border-b border-royal-800 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white p-0.5 border-2 border-gold-400 shadow-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
-                {customLogo ? (
-                  <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-royal-900 flex flex-col items-center justify-center text-center p-0.5">
-                    <span className="text-[7px] font-extrabold text-gold-400 leading-none">BSS</span>
-                    <span className="text-[5px] text-white font-semibold leading-tight">SCIENCE</span>
-                    <span className="text-[5px] text-sky-300 leading-none">323320474</span>
-                  </div>
-                )}
+                <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xs sm:text-sm font-extrabold tracking-tight text-white leading-snug truncate">
@@ -152,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
 
           {/* PWA Install Button when available */}
-          {isInstallable && !isInstalled && (
+          {mounted && isInstallable && !isInstalled && (
             <div className="p-3 pt-1 border-t border-royal-800/80">
               <button
                 type="button"

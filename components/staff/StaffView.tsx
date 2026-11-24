@@ -3,7 +3,7 @@
 import React from "react";
 import Icon from "@/components/ui/Icon";
 import ActionsDropdown from "@/components/ui/ActionsDropdown";
-import { calcTeacherNetPay } from "@/lib/utils";
+import { calcTeacherNetPay, getNameInitials, buildWhatsAppURL, buildFacultyIDCardWhatsAppMsg } from "@/lib/utils";
 
 interface StaffViewProps {
   teachers: any[];
@@ -27,7 +27,7 @@ export const StaffView: React.FC<StaffViewProps> = ({
   onPrintPayrollSheet,
 }) => {
   const getAvatarHTML = (photo: string, name: string) => {
-    if (photo) {
+    if (photo && String(photo).trim()) {
       return (
         <img
           src={photo}
@@ -36,10 +36,9 @@ export const StaffView: React.FC<StaffViewProps> = ({
         />
       );
     }
-    const initial = (name || "T").trim().charAt(0).toUpperCase();
     return (
-      <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-800 border border-purple-200 font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
-        {initial}
+      <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-800 border border-purple-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
+        {getNameInitials(name)}
       </div>
     );
   };
@@ -100,8 +99,8 @@ export const StaffView: React.FC<StaffViewProps> = ({
                     t.att === "Present"
                       ? "bg-emerald-100 text-emerald-800"
                       : t.att === "Absent"
-                      ? "bg-rose-100 text-rose-800"
-                      : "bg-amber-100 text-amber-800";
+                        ? "bg-rose-100 text-rose-800"
+                        : "bg-amber-100 text-amber-800";
 
                   const payBadge =
                     t.payStatus === "Paid"
@@ -166,6 +165,11 @@ export const StaffView: React.FC<StaffViewProps> = ({
                               label: "View ID Card",
                               icon: <Icon name="idcard" className="w-3.5 h-3.5 text-royal-600" />,
                               onClick: () => onViewIDCard(t),
+                            },
+                            {
+                              label: "WhatsApp ID Card",
+                              icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
+                              href: buildWhatsAppURL(t.phone, buildFacultyIDCardWhatsAppMsg(t)),
                             },
                             {
                               label: "View Pay Slip",

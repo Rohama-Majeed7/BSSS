@@ -2,19 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  cleanDistDir: false,
-  experimental: {
-    // Disable multi-process webpack build workers on Windows to prevent EPERM file-locking race conditions in next-swc-loader
-    webpackBuildWorker: false,
-  },
-  webpack: (config) => {
-    config.resolve = config.resolve || {};
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-    };
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
     return config;
   },
   async headers() {

@@ -10,6 +10,7 @@ interface PwaContextType {
   promptInstall: () => Promise<void>;
   showIosGuide: boolean;
   setShowIosGuide: (show: boolean) => void;
+  mounted: boolean;
 }
 
 const PwaContext = createContext<PwaContextType>({
@@ -19,6 +20,7 @@ const PwaContext = createContext<PwaContextType>({
   promptInstall: async () => {},
   showIosGuide: false,
   setShowIosGuide: () => {},
+  mounted: false,
 });
 
 export const usePwa = () => useContext(PwaContext);
@@ -36,8 +38,11 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showBanner, setShowBanner] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     // 1. Initial connectivity status
     if (typeof window !== "undefined") {
       setIsOnline(navigator.onLine);
@@ -145,12 +150,13 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         promptInstall,
         showIosGuide,
         setShowIosGuide,
+        mounted,
       }}
     >
       {children}
 
-      {/* Offline Toast Notification */}
-      {!isOnline && (
+      {/* Offline Toast Notification (Only rendered after client mounted to prevent hydration mismatch) */}
+      {mounted && !isOnline && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 bg-rose-900 text-white p-3.5 rounded-2xl shadow-2xl border border-rose-700 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom duration-200">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping"></span>
@@ -170,7 +176,7 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )}
 
       {/* Non-intrusive Install App Banner (Desktop & Mobile Chrome/Edge/Samsung) */}
-      {showBanner && isInstallable && (
+      {mounted && showBanner && isInstallable && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-6 sm:right-auto sm:max-w-md z-40 bg-royal-950 text-white p-4 rounded-2xl shadow-2xl border-2 border-gold-400/40 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-royal-900 border border-gold-400/50 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -206,7 +212,7 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )}
 
       {/* iOS Safari 'Add to Home Screen' Instructions Modal */}
-      {showIosGuide && (
+      {mounted && showIosGuide && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
             <div className="w-14 h-14 rounded-2xl bg-royal-900 text-gold-400 mx-auto flex items-center justify-center font-extrabold text-lg border-2 border-gold-400 shadow-md">

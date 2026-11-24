@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Icon from "@/components/ui/Icon";
 import ActionsDropdown from "@/components/ui/ActionsDropdown";
 import { SCHOOL_CLASSES, SCHOOL_INFO } from "@/lib/constants";
-import { formatClassLabel, calcExamStats, buildWhatsAppURL } from "@/lib/utils";
+import { formatClassLabel, calcExamStats, buildWhatsAppURL, getNameInitials, buildResultCardWhatsAppMsg } from "@/lib/utils";
 
 interface ExamsViewProps {
   examResults: any[];
@@ -35,7 +35,7 @@ export const ExamsView: React.FC<ExamsViewProps> = ({
   });
 
   const getAvatarHTML = (photo: string, name: string) => {
-    if (photo) {
+    if (photo && String(photo).trim()) {
       return (
         <img
           src={photo}
@@ -44,10 +44,9 @@ export const ExamsView: React.FC<ExamsViewProps> = ({
         />
       );
     }
-    const initial = (name || "S").trim().charAt(0).toUpperCase();
     return (
-      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
-        {initial}
+      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
+        {getNameInitials(name)}
       </div>
     );
   };
@@ -143,8 +142,7 @@ export const ExamsView: React.FC<ExamsViewProps> = ({
                         ? "bg-sky-100 text-sky-800"
                         : "bg-rose-100 text-rose-800";
 
-                  const waMsg = `Assalam-o-Alaikum Respected ${s.father}, exam result notification from ${SCHOOL_INFO.name} for ${s.name} (${clsLabel}, Adm #${s.admNo}) - Term: ${r.term}: Obtained ${stats.obtained}/${stats.total} marks (${stats.pct}%, Grade: ${stats.grade}, Status: ${stats.status}). Position: ${r.rank || 'N/A'}. JazakAllah!`;
-                  const waURL = buildWhatsAppURL(s.phone, waMsg);
+                  const waURL = buildWhatsAppURL(s.phone, buildResultCardWhatsAppMsg(s, r));
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-50 transition">

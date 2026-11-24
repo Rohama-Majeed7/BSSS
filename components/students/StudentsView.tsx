@@ -10,6 +10,8 @@ import {
   getNetStudentFee,
   getFeeStatus,
   buildWhatsAppURL,
+  getNameInitials,
+  buildStudentIDCardWhatsAppMsg,
 } from "@/lib/utils";
 import { SCHOOL_INFO } from "@/lib/constants";
 
@@ -57,7 +59,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   }, [students, search, classFilter, statusFilter]);
 
   const getAvatarHTML = (photo: string, name: string) => {
-    if (photo) {
+    if (photo && String(photo).trim()) {
       return (
         <img
           src={photo}
@@ -66,10 +68,9 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         />
       );
     }
-    const initial = (name || "S").trim().charAt(0).toUpperCase();
     return (
-      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
-        {initial}
+      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
+        {getNameInitials(name)}
       </div>
     );
   };
@@ -307,6 +308,11 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                               label: "View ID Card",
                               icon: <Icon name="idcard" className="w-3.5 h-3.5 text-royal-600" />,
                               onClick: () => onViewIDCard(s),
+                            },
+                            {
+                              label: "WhatsApp ID Card",
+                              icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
+                              href: buildWhatsAppURL(s.phone, buildStudentIDCardWhatsAppMsg(s)),
                             },
                             {
                               label: "Exam Result (DMC)",

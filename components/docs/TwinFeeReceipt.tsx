@@ -29,11 +29,7 @@ export const TwinFeeReceipt: React.FC<TwinFeeReceiptProps> = ({
       <div className="text-center border-b border-royal-900 pb-2">
         <div className="flex items-center justify-center gap-2">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white p-0.5 border border-gold-400 overflow-hidden flex-shrink-0 flex items-center justify-center">
-            {customLogo ? (
-              <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[8px] font-extrabold text-royal-900">BSS</span>
-            )}
+            <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h4 className="font-extrabold text-royal-950 text-xs uppercase leading-tight">
@@ -134,11 +130,12 @@ export const TwinFeeReceipt: React.FC<TwinFeeReceiptProps> = ({
           <span>Accountant</span>
         </div>
         <div className="text-center">
-          {customSign ? (
-            <img src={customSign} alt="Sign" className="h-5 mx-auto object-contain" />
-          ) : (
-            <div className="text-[10px] text-blue-800 font-serif italic">Rahmatullah</div>
-          )}
+          <img
+            src={customSign || "/principal-sign.jpg"}
+            alt="Principal Sign"
+            className="h-6 max-w-[80px] mx-auto object-contain"
+            style={{ mixBlendMode: "multiply" }}
+          />
           <span className="font-bold text-royal-950 uppercase text-[8px]">Principal</span>
         </div>
       </div>

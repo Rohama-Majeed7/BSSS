@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+import Icon from "@/components/ui/Icon";
 
 interface DocModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   onPrint: () => void;
+  onSavePdf?: () => void;
   extraLeftButton?: React.ReactNode;
   children: React.ReactNode;
 }
@@ -16,6 +18,7 @@ export const DocModal: React.FC<DocModalProps> = ({
   onClose,
   title,
   onPrint,
+  onSavePdf,
   extraLeftButton,
   children,
 }) => {
@@ -40,9 +43,9 @@ export const DocModal: React.FC<DocModalProps> = ({
         <div className="py-4 overflow-y-auto flex justify-center">{children}</div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-3 border-t border-slate-200 gap-2">
+        <div className="flex flex-wrap justify-between items-center pt-3 border-t border-slate-200 gap-2">
           <div>{extraLeftButton}</div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onClose}
@@ -52,10 +55,19 @@ export const DocModal: React.FC<DocModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={onPrint}
-              className="px-5 py-2 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-extrabold text-xs shadow-md transition"
+              onClick={onSavePdf || onPrint}
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs shadow-md transition flex items-center gap-1.5"
             >
-              Print Document (A4)
+              <Icon name="download" className="w-3.5 h-3.5" />
+              <span>Save as PDF</span>
+            </button>
+            <button
+              type="button"
+              onClick={onPrint}
+              className="px-5 py-2 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-extrabold text-xs shadow-md transition flex items-center gap-1.5"
+            >
+              <Icon name="print" className="w-3.5 h-3.5" />
+              <span>Print Document (A4)</span>
             </button>
           </div>
         </div>

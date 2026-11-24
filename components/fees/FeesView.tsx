@@ -9,6 +9,8 @@ import {
   getNetStudentFee,
   getFeeStatus,
   buildWhatsAppURL,
+  getNameInitials,
+  buildFeeReceiptWhatsAppMsg,
 } from "@/lib/utils";
 
 interface FeesViewProps {
@@ -99,7 +101,7 @@ export const FeesView: React.FC<FeesViewProps> = ({
   };
 
   const getAvatarHTML = (photo: string, name: string) => {
-    if (photo) {
+    if (photo && String(photo).trim()) {
       return (
         <img
           src={photo}
@@ -108,10 +110,9 @@ export const FeesView: React.FC<FeesViewProps> = ({
         />
       );
     }
-    const initial = (name || "S").trim().charAt(0).toUpperCase();
     return (
-      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
-        {initial}
+      <div className="w-10 h-10 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-xs tracking-wider shadow-sm flex-shrink-0">
+        {getNameInitials(name)}
       </div>
     );
   };
@@ -327,6 +328,11 @@ export const FeesView: React.FC<FeesViewProps> = ({
                               label: "Print Fee Receipt",
                               icon: <Icon name="print" className="w-3.5 h-3.5 text-slate-600" />,
                               onClick: () => onViewFeeReceipt(s),
+                            },
+                            {
+                              label: "WhatsApp Fee Receipt",
+                              icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
+                              href: buildWhatsAppURL(s.phone, buildFeeReceiptWhatsAppMsg(s)),
                             },
                             {
                               label: "WhatsApp Reminder",

@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   customLogo,
 }) => {
-  const { isInstallable, isInstalled, promptInstall } = usePwa();
+  const { isInstallable, isInstalled, promptInstall, mounted } = usePwa();
 
   return (
     <header className="bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-3 sticky top-0 z-20 shadow-sm">
@@ -43,14 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border-2 border-royal-900 p-0.5 shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center">
-          {customLogo ? (
-            <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-full" />
-          ) : (
-            <div className="w-full h-full rounded-full bg-royal-900 flex flex-col items-center justify-center text-center">
-              <span className="text-[6px] font-extrabold text-gold-400 leading-none">BSS</span>
-              <span className="text-[4px] text-white leading-none">ACADEMY</span>
-            </div>
-          )}
+          <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover rounded-full" />
         </div>
         <div className="min-w-0">
           <h2 className="text-sm sm:text-lg lg:text-xl font-extrabold text-royal-900 leading-tight truncate">
@@ -61,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-        {isInstallable && !isInstalled && (
+        {mounted && isInstallable && !isInstalled && (
           <button
             type="button"
             onClick={promptInstall}

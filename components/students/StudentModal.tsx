@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { SCHOOL_CLASSES } from "@/lib/constants";
-import { formatClassLabel, calculateAge } from "@/lib/utils";
+import { formatClassLabel, calculateAge, getNameInitials } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 
 interface StudentModalProps {
   isOpen: boolean;
@@ -108,17 +109,36 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxW = 320;
-        const scale = maxW / img.width;
-        canvas.width = maxW;
-        canvas.height = img.height * scale;
+        const maxDim = 400;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx?.drawImage(img, 0, 0, width, height);
         setPhoto(canvas.toDataURL("image/jpeg", 0.85));
       };
       img.src = ev.target?.result as string;
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,7 +208,74 @@ export const StudentModal: React.FC<StudentModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
+          {/* Student Photo Upload Section */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-royal-300 bg-white overflow-hidden shadow-inner flex items-center justify-center">
+                {photo && photo.trim() ? (
+                  <img
+                    src={photo}
+                    alt="Student Photo Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-2">
+                    <span className="text-lg sm:text-xl font-extrabold text-royal-700 tracking-wider">
+                      {name.trim() ? getNameInitials(name) : "BSS"}
+                    </span>
+                    <span className="block text-[9px] text-slate-400 font-bold mt-0.5">
+                      No Photo
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
 
+            <div className="flex-1 text-center sm:text-left space-y-2 w-full">
+              <div>
+                <label className="block text-xs font-extrabold text-royal-950 uppercase tracking-wider">
+                  Student Photo (For ID Card &amp; Records)
+                </label>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Upload a passport-style portrait. If uploaded, it will appear on the Student ID Card; otherwise, name initials will be displayed.
+                </p>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/jpg"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3.5 py-1.5 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+                >
+                  <Icon name="camera" className="w-3.5 h-3.5" />
+                  <span>{photo ? "Change Photo" : "Upload Photo"}</span>
+                </button>
+
+                {photo && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition"
+                  >
+                    <Icon name="trash" className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Remove Photo</span>
+                  </button>
+                )}
+
+                <span className="text-[10px] text-slate-400 font-medium">
+                  PNG, JPG or WebP (Auto-optimized)
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Admission No, Name & Father */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

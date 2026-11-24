@@ -27,11 +27,7 @@ export const TeacherPaySlip: React.FC<TeacherPaySlipProps> = ({
       {/* Header */}
       <div className="text-center border-b-2 border-purple-900 pb-2">
         <div className="w-12 h-12 rounded-full bg-white p-0.5 border-2 border-gold-400 mx-auto overflow-hidden shadow-sm flex items-center justify-center">
-          {customLogo ? (
-            <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-[9px] font-extrabold text-purple-900">BSS</span>
-          )}
+          <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
         </div>
         <h3 className="font-extrabold text-royal-950 text-sm uppercase mt-1">
           {SCHOOL_INFO.nameUpper}
@@ -111,11 +107,12 @@ export const TeacherPaySlip: React.FC<TeacherPaySlipProps> = ({
           <span className="font-bold">Accounts Officer</span>
         </div>
         <div className="text-center">
-          {customSign ? (
-            <img src={customSign} alt="Sign" className="h-6 mx-auto object-contain" />
-          ) : (
-            <div className="text-[10px] text-blue-800 font-serif italic">Rahmatullah Dogar</div>
-          )}
+          <img
+            src={customSign || "/principal-sign.jpg"}
+            alt="Principal Sign"
+            className="h-7 max-w-[95px] mx-auto object-contain"
+            style={{ mixBlendMode: "multiply" }}
+          />
           <span className="font-bold text-royal-950 uppercase text-[9px]">Principal</span>
         </div>
       </div>

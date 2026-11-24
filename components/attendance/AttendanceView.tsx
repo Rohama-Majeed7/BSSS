@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Icon from "@/components/ui/Icon";
 import ActionsDropdown from "@/components/ui/ActionsDropdown";
 import { SCHOOL_CLASSES, SCHOOL_INFO } from "@/lib/constants";
-import { formatClassLabel, buildWhatsAppURL } from "@/lib/utils";
+import { formatClassLabel, buildWhatsAppURL, getNameInitials } from "@/lib/utils";
 
 interface AttendanceViewProps {
   students: any[];
@@ -54,7 +54,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   );
 
   const getAvatarHTML = (photo: string, name: string) => {
-    if (photo) {
+    if (photo && String(photo).trim()) {
       return (
         <img
           src={photo}
@@ -63,10 +63,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         />
       );
     }
-    const initial = (name || "S").trim().charAt(0).toUpperCase();
     return (
-      <div className="w-9 h-9 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
-        {initial}
+      <div className="w-9 h-9 rounded-full bg-royal-100 text-royal-800 border border-royal-200 font-extrabold flex items-center justify-center text-[11px] tracking-wider shadow-sm flex-shrink-0">
+        {getNameInitials(name)}
       </div>
     );
   };

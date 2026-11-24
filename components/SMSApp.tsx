@@ -19,6 +19,7 @@ import ResultModal from "@/components/exams/ResultModal";
 import StaffModal from "@/components/staff/StaffModal";
 import DocModal from "@/components/modals/DocModal";
 import Toast from "@/components/ui/Toast";
+import Icon from "@/components/ui/Icon";
 
 import TwinFeeReceipt from "@/components/docs/TwinFeeReceipt";
 import ResultCardDMC from "@/components/docs/ResultCardDMC";
@@ -30,8 +31,14 @@ import {
   VALID_TABS,
   type ValidTab,
 } from "@/lib/constants";
-import { formatClassLabel, buildWhatsAppURL } from "@/lib/utils";
+import {
+  formatClassLabel,
+  buildWhatsAppURL,
+  buildFeeReceiptWhatsAppMsg,
+  buildResultCardWhatsAppMsg,
+} from "@/lib/utils";
 import { export7SheetExcel } from "@/lib/excelExport";
+import { printOrSavePdf } from "@/lib/exportPdf";
 import {
   triggerA4Print,
   buildStudentRegisterHTML,
@@ -323,13 +330,14 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
       <a
         href={buildWhatsAppURL(
           student.phone,
-          `Assalam-o-Alaikum Respected ${student.father}, fee payment of Rs.${student.paid} received for ${student.name} (${formatClassLabel(student.class)}). JazakAllah!`
+          buildFeeReceiptWhatsAppMsg(student)
         )}
         target="_blank"
         rel="noopener noreferrer"
-        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-block"
+        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
       >
-        Send WhatsApp Receipt
+        <Icon name="whatsapp" className="w-3.5 h-3.5" />
+        <span>WhatsApp Fee Receipt</span>
       </a>
     );
     setIsDocModalOpen(true);
@@ -378,13 +386,14 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
       <a
         href={buildWhatsAppURL(
           s.phone,
-          `Assalam-o-Alaikum Respected ${s.father}, DMC Result card for ${s.name} (${result.term}) is ready at ${SCHOOL_INFO.name}.`
+          buildResultCardWhatsAppMsg(s, result)
         )}
         target="_blank"
         rel="noopener noreferrer"
-        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-block"
+        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
       >
-        WhatsApp DMC
+        <Icon name="whatsapp" className="w-3.5 h-3.5" />
+        <span>WhatsApp DMC Result</span>
       </a>
     );
     setIsDocModalOpen(true);
@@ -475,14 +484,19 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
     }
   };
 
-  // Document modal print handler
+  // Document modal print & PDF save handler
   const handlePrintModalDoc = () => {
     const el = document.querySelector(".doc-modal-body");
+    const filename = `${docModalTitle.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
     if (el) {
-      triggerA4Print(el.innerHTML);
+      printOrSavePdf(el.innerHTML, filename);
     } else {
       window.print();
     }
+  };
+
+  const handleSaveModalDocPdf = () => {
+    handlePrintModalDoc();
   };
 
   // Master Registers printing handlers
@@ -810,6 +824,7 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
         onClose={() => setIsDocModalOpen(false)}
         title={docModalTitle}
         onPrint={handlePrintModalDoc}
+        onSavePdf={handleSaveModalDocPdf}
         extraLeftButton={docModalExtraButton}
       >
         <div className="doc-modal-body">{docModalContent}</div>
