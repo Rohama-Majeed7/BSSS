@@ -4,6 +4,7 @@ import React from "react";
 import { signOut } from "next-auth/react";
 import Icon from "../ui/Icon";
 import { SCHOOL_INFO } from "@/lib/constants";
+import { usePwa } from "../providers/PwaProvider";
 
 interface HeaderProps {
   pageTitle: string;
@@ -22,6 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   customLogo,
 }) => {
+  const { isInstallable, isInstalled, promptInstall } = usePwa();
+
   return (
     <header className="bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-3 sticky top-0 z-20 shadow-sm">
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -58,6 +61,18 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        {isInstallable && !isInstalled && (
+          <button
+            type="button"
+            onClick={promptInstall}
+            className="inline-flex items-center gap-1 sm:gap-1.5 bg-amber-400 hover:bg-amber-300 text-royal-950 text-[11px] sm:text-xs font-extrabold px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl shadow-xs transition touch-manipulation"
+            title="Install Bright Stars SMS as an App"
+          >
+            <Icon name="download" className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Install App</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onExportExcel}

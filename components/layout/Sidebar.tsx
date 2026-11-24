@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { signOut } from "next-auth/react";
 import Icon from "../ui/Icon";
 import { SCHOOL_INFO } from "@/lib/constants";
+import { usePwa } from "../providers/PwaProvider";
 
 interface SidebarProps {
   activeTab: string;
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const signInputRef = useRef<HTMLInputElement>(null);
+  const { isInstallable, isInstalled, promptInstall } = usePwa();
 
   const handleFile = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -148,6 +150,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </nav>
+
+          {/* PWA Install Button when available */}
+          {isInstallable && !isInstalled && (
+            <div className="p-3 pt-1 border-t border-royal-800/80">
+              <button
+                type="button"
+                onClick={promptInstall}
+                className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-royal-950 font-extrabold text-xs shadow-md transition touch-manipulation"
+              >
+                <Icon name="download" className="w-4 h-4 text-royal-950" />
+                <span>Install Bright Stars App</span>
+              </button>
+            </div>
+          )}
         </div>
 
 
