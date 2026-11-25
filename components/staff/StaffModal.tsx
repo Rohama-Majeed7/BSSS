@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { getNameInitials } from "@/lib/utils";
+import { getNameInitials, formatCNIC } from "@/lib/utils";
 import {
   uploadPhotoToNeon,
   deletePhotoFromServer,
@@ -73,7 +73,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
       setEmpId(editTeacher.empId || "");
       setName(editTeacher.name || "");
       setRole(editTeacher.role || "");
-      setCnic(editTeacher.cnic || "");
+      setCnic(formatCNIC(editTeacher.cnic || ""));
       setPhone(editTeacher.phone || "");
       setBasic(Number(editTeacher.basic || 35000));
       setAllowance(Number(editTeacher.allowance || 0));
@@ -362,9 +362,11 @@ export const StaffModal: React.FC<StaffModalProps> = ({
               <label className="block font-bold text-slate-700 mb-1">CNIC No. *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={15}
                 required
                 value={cnic}
-                onChange={(e) => setCnic(e.target.value)}
+                onChange={(e) => setCnic(formatCNIC(e.target.value))}
                 placeholder="32303-1234567-1"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-royal-500 font-mono"
               />

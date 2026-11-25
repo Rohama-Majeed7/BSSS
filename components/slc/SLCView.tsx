@@ -1,329 +1,445 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SCHOOL_CLASSES, SCHOOL_INFO } from "@/lib/constants";
-import { formatClassLabel } from "@/lib/utils";
+import { formatClassLabel, formatCNIC } from "@/lib/utils";
+import { printOrSavePdf } from "@/lib/exportPdf";
+
+const REASON_PRESETS = [
+  { label: "School Change", value: "School Change" },
+  { label: "Relocation / Family Shifting", value: "Relocation / Family Shifting" },
+  {
+    label: "Completed Session",
+    value: "Completed Academic Session / Passed Examination",
+  },
+  { label: "Personal Reasons", value: "Personal / Domestic Reasons" },
+];
 
 interface SLCViewProps {
   students: any[];
-  onSaveSLC: (studentId: number, slcData: any) => void;
-  onPrintSLC: (student: any, extra: any) => void;
-  onShowToast: (msg: string) => void;
+  initialStudentId?: number | null;
+  initialSelectKey?: number;
+  onSaveSLC: (studentId: number, slcData: any) => Promise<void> | void;
+  onPrintSLC?: (student: any, extra: any) => void;
+  onShowToast: (msg: string, type?: "success" | "error" | "warning" | "info") => void;
   customLogo?: string;
   customSign?: string;
 }
 
 export const SLCView: React.FC<SLCViewProps> = ({
   students,
+  initialStudentId,
+  initialSelectKey,
   onSaveSLC,
-  onPrintSLC,
   onShowToast,
   customLogo,
   customSign,
 }) => {
   const [selectedStuId, setSelectedStuId] = useState<number | "">("");
-  const [admClass, setAdmClass] = useState("");
-  const [leaveClass, setLeaveClass] = useState("");
-  const [leaveDate, setLeaveDate] = useState(new Date().toISOString().split("T")[0]);
+  const [admClass, setAdmClass] = useState("Nursery");
+  const [leaveClass, setLeaveClass] = useState("Nursery");
+  const [leaveDate, setLeaveDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [conduct, setConduct] = useState("Excellent");
-  const [reasonPreset, setReasonPreset] = useState("Family Relocation to Another City");
-  const [reason, setReason] = useState("Family Relocation to Another City");
+  const [reasonPreset, setReasonPreset] = useState("School Change");
+  const [reason, setReason] = useState("School Change");
   const [markLeft, setMarkLeft] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const previewCardRef = useRef<HTMLDivElement>(null);
+  const lastAppliedKeyRef = useRef<string>("");
+
+  const logoSrc = customLogo || "/logo.png";
+  const signSrc = customSign || "/principal-sign.jpg";
+
+  // Select requested student once per navigation trigger, or default to the first student
+  useEffect(() => {
+    const triggerKey = `${initialStudentId ?? ""}:${initialSelectKey ?? 0}`;
+    if (
+      initialStudentId &&
+      lastAppliedKeyRef.current !== triggerKey &&
+      students.some((s) => s.id === initialStudentId)
+    ) {
+      lastAppliedKeyRef.current = triggerKey;
+      setSelectedStuId(initialStudentId);
+      return;
+    }
+
+    if (
+      (!selectedStuId || !students.some((s) => s.id === Number(selectedStuId))) &&
+      students.length > 0
+    ) {
+      setSelectedStuId(students[0].id);
+    }
+  }, [initialStudentId, initialSelectKey, students, selectedStuId]);
 
   const selectedStudent = students.find((s) => s.id === Number(selectedStuId));
 
+  // Sync form fields whenever the selected student changes
   useEffect(() => {
-    if (selectedStudent) {
-      setAdmClass(selectedStudent.admClass || selectedStudent.class);
-      setLeaveClass(selectedStudent.leaveClass || selectedStudent.class);
-      if (selectedStudent.leaveDate) setLeaveDate(selectedStudent.leaveDate);
-      if (selectedStudent.conduct) setConduct(selectedStudent.conduct);
-      if (selectedStudent.leaveReason) {
-        setReason(selectedStudent.leaveReason);
-        setReasonPreset(selectedStudent.leaveReason);
-      }
+    if (!selectedStudent) return;
+    setAdmClass(selectedStudent.admClass || selectedStudent.class || "Nursery");
+    setLeaveClass(selectedStudent.leaveClass || selectedStudent.class || "Nursery");
+    setLeaveDate(
+      selectedStudent.leaveDate || new Date().toISOString().split("T")[0]
+    );
+    setConduct(selectedStudent.conduct || "Excellent");
+    const reasonVal = selectedStudent.leaveReason || "School Change";
+    setReason(reasonVal);
+    const matchingPreset = REASON_PRESETS.find((p) => p.value === reasonVal);
+    if (matchingPreset) {
+      setReasonPreset(matchingPreset.value);
     }
-  }, [selectedStudent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStudent?.id]);
 
-  const handlePresetChange = (preset: string) => {
-    setReasonPreset(preset);
-    if (preset !== "Other (Type Below)") {
-      setReason(preset);
-    }
+  const handlePresetChange = (presetVal: string) => {
+    setReasonPreset(presetVal);
+    setReason(presetVal);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedStudent) {
-      onShowToast("Please select a student first.");
+      onShowToast("Please select a student first.", "warning");
       return;
     }
-    const slcData = {
-      admClass,
-      leaveClass,
-      leaveDate,
-      conduct,
-      leaveReason: reason,
-      markLeft,
-    };
-    onSaveSLC(selectedStudent.id, slcData);
-    onShowToast(`SLC saved for ${selectedStudent.name}.`);
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await onSaveSLC(selectedStudent.id, {
+        admClass,
+        leaveClass,
+        leaveDate,
+        conduct,
+        leaveReason: reason.trim() || "School Change",
+        markLeft,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrint = () => {
-    if (!selectedStudent) {
-      onShowToast("Please select a student first.");
+    if (!selectedStudent || !previewCardRef.current) {
+      onShowToast("Please select a student first.", "warning");
       return;
     }
-    onPrintSLC(selectedStudent, {
-      admClass,
-      leaveClass,
-      leaveDate,
-      conduct,
-      reason,
-    });
+    const cleanName = String(selectedStudent.name || "Student").replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
+    const filename = `SLC_${cleanName}_${selectedStudent.admNo}.pdf`;
+    printOrSavePdf(
+      `<div style="display:flex;justify-content:center;padding-top:10px;">${previewCardRef.current.outerHTML}</div>`,
+      filename
+    );
   };
 
+  const slcNo = selectedStudent
+    ? `BS-SLC-2026-${100 + (Number(selectedStudent.id) % 899)}`
+    : "";
+
+  const displayBform = selectedStudent?.bform
+    ? /^\d/.test(String(selectedStudent.bform))
+      ? formatCNIC(selectedStudent.bform)
+      : selectedStudent.bform
+    : "—";
+
   return (
-    <section className="tab-panel p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
-      {/* Top Header */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <div>
-          <h3 className="text-base sm:text-lg font-extrabold text-royal-900">
+    <section className="tab-panel p-4 sm:p-8 space-y-6">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+        {/* Header */}
+        <div className="pb-4 border-b border-slate-200">
+          <h3 className="text-lg font-extrabold text-royal-900">
             School Leaving Certificate (SLC) Generator
           </h3>
           <p className="text-xs text-slate-500">
-            Generate official A4 School Leaving &amp; Character Certificates with admission and withdrawal history.
+            Select a student, customize Admission Class, Leaving Class, Leaving Date, Conduct &amp; Reason (defaults to &quot;School Change&quot;), save to record, and print official A4 SLC.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold text-xs shadow-md transition"
-          >
-            Save SLC to Record
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-royal-950 font-extrabold text-xs shadow-md transition"
-          >
-            Print Official SLC (A4)
-          </button>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Form */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-4 text-xs sm:text-sm">
+        {/* 3-Column Form Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs sm:text-sm">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
+            <label className="block font-bold text-slate-700 mb-1">
+              Select Student *
+            </label>
             <select
               value={selectedStuId}
-              onChange={(e) => setSelectedStuId(e.target.value ? Number(e.target.value) : "")}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-royal-500"
+              onChange={(e) =>
+                setSelectedStuId(e.target.value ? Number(e.target.value) : "")
+              }
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-royal-900 outline-none focus:ring-2 focus:ring-royal-500"
             >
-              <option value="">-- Choose Student --</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({formatClassLabel(s.class)}, Adm #{s.admNo})
+              {students.length === 0 ? (
+                <option value="">-- No Students Available --</option>
+              ) : (
+                students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — {formatClassLabel(s.class)} (Adm #{s.admNo})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Admission Class
+            </label>
+            <select
+              value={admClass}
+              onChange={(e) => setAdmClass(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-royal-500"
+            >
+              {SCHOOL_CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {formatClassLabel(c)}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Class Admitted *</label>
-              <select
-                value={admClass}
-                onChange={(e) => setAdmClass(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-royal-500"
-              >
-                {SCHOOL_CLASSES.map((c) => (
-                  <option key={c} value={c}>
-                    {formatClassLabel(c)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Class Left *</label>
-              <select
-                value={leaveClass}
-                onChange={(e) => setLeaveClass(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-royal-500"
-              >
-                {SCHOOL_CLASSES.map((c) => (
-                  <option key={c} value={c}>
-                    {formatClassLabel(c)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">Withdrawal Date *</label>
-              <input
-                type="date"
-                value={leaveDate}
-                onChange={(e) => setLeaveDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-royal-500"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">General Conduct *</label>
-              <select
-                value={conduct}
-                onChange={(e) => setConduct(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-royal-500"
-              >
-                <option value="Excellent">Excellent</option>
-                <option value="Very Good">Very Good</option>
-                <option value="Good">Good</option>
-                <option value="Satisfactory">Satisfactory</option>
-              </select>
-            </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Leaving Class
+            </label>
+            <select
+              value={leaveClass}
+              onChange={(e) => setLeaveClass(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-royal-500"
+            >
+              {SCHOOL_CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {formatClassLabel(c)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Reason for Leaving *</label>
+            <label className="block font-bold text-slate-700 mb-1">
+              Leaving Date
+            </label>
+            <input
+              type="date"
+              value={leaveDate}
+              onChange={(e) => setLeaveDate(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-royal-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              Conduct &amp; Character
+            </label>
             <select
-              value={reasonPreset}
-              onChange={(e) => handlePresetChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs mb-2 focus:outline-none focus:ring-2 focus:ring-royal-500"
+              value={conduct}
+              onChange={(e) => setConduct(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-royal-500"
             >
-              <option value="Family Relocation to Another City">Family Relocation to Another City</option>
-              <option value="Course of Study Completed">Course of Study Completed</option>
-              <option value="Admission into Higher College / Institution">Admission into Higher College / Institution</option>
-              <option value="Domestic / Private Reasons">Domestic / Private Reasons</option>
-              <option value="Other (Type Below)">Other (Type Below)</option>
+              <option value="Excellent">Excellent</option>
+              {conduct === "Very Good" && (
+                <option value="Very Good">Very Good</option>
+              )}
+              <option value="Good">Good</option>
+              <option value="Satisfactory">Satisfactory</option>
             </select>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center gap-2 mb-1">
+              <label className="font-bold text-slate-700">
+                Reason for Leaving
+              </label>
+              <select
+                value={reasonPreset}
+                onChange={(e) => handlePresetChange(e.target.value)}
+                className="px-2 py-0.5 rounded-lg border border-slate-300 bg-white text-[11px] font-bold text-royal-900 outline-none"
+              >
+                {REASON_PRESETS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Relocating with parents"
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-royal-500"
+              placeholder="School Change"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-royal-500"
             />
-          </div>
-
-          <div className="pt-2">
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={markLeft}
-                onChange={(e) => setMarkLeft(e.target.checked)}
-                className="rounded border-slate-300 text-royal-600 focus:ring-royal-500 w-4 h-4"
-              />
-              <span className="text-xs font-bold text-slate-700">
-                Mark Student Status as &quot;Left / Withdrawn&quot;
-              </span>
-            </label>
           </div>
         </div>
 
-        {/* Right Live Preview */}
-        <div className="lg:col-span-2 bg-slate-50 rounded-3xl p-4 sm:p-6 border border-slate-200 overflow-x-auto flex justify-center">
+        {/* Amber Action Bar */}
+        <div className="flex flex-wrap justify-between items-center gap-3 bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200">
+          <label className="inline-flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={markLeft}
+              onChange={(e) => setMarkLeft(e.target.checked)}
+              className="rounded text-royal-800 focus:ring-royal-500"
+            />
+            <span>Mark student status as &quot;Left&quot; when saving SLC record</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving || !selectedStudent}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition disabled:opacity-50"
+            >
+              {isSaving ? "Saving..." : "Save SLC to Record"}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={!selectedStudent}
+              className="px-5 py-2.5 rounded-xl bg-royal-800 hover:bg-royal-900 text-white font-bold text-xs sm:text-sm shadow-md transition disabled:opacity-50"
+            >
+              Print Official SLC (A4)
+            </button>
+          </div>
+        </div>
+
+        {/* Centered Live Certificate Preview */}
+        <div className="flex justify-center pt-2">
           {selectedStudent ? (
-            <div className="w-full max-w-[620px] bg-white p-5 sm:p-8 rounded-2xl shadow-lg border-2 border-royal-900 text-slate-900 text-xs relative space-y-4 doc-watermark min-w-[320px]">
-              {/* Header */}
-              <div className="text-center border-b-2 border-royal-900 pb-3">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white p-0.5 border-2 border-gold-400 mx-auto overflow-hidden shadow-sm flex items-center justify-center">
-                  <img src={customLogo || "/logo.png"} alt="Logo" className="w-full h-full object-cover" />
+            <div
+              ref={previewCardRef}
+              className="w-full max-w-2xl border-4 border-double border-royal-900 rounded-3xl p-6 sm:p-8 bg-white doc-watermark"
+            >
+              <img
+                src={logoSrc}
+                alt="Watermark"
+                className="doc-watermark-bg rounded-full object-contain"
+                style={{ width: "240px", height: "240px" }}
+              />
+              <div className="relative z-10">
+                <div className="flex items-center justify-center gap-4 pb-4 border-b-2 border-royal-800 text-center">
+                  <div className="w-16 h-16 rounded-full bg-white border-2 border-gold-400 p-0.5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <img
+                      src={logoSrc}
+                      alt="School Crest"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-lg sm:text-xl font-extrabold text-royal-900">
+                      {SCHOOL_INFO.nameUpper}
+                    </h4>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      {SCHOOL_INFO.address} • EMIS: {SCHOOL_INFO.emis}
+                    </p>
+                    <p className="font-urdu text-xs text-royal-800 mt-0.5">
+                      {SCHOOL_INFO.urduName}، مظفرگڑھ
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-sm sm:text-base font-extrabold text-royal-950 uppercase mt-1">
-                  {SCHOOL_INFO.nameUpper}
-                </h3>
-                <p className="font-urdu text-xs text-gold-600 mt-0.5">{SCHOOL_INFO.urduName}</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-600 mt-0.5">
-                  EMIS Code: {SCHOOL_INFO.emis} • {SCHOOL_INFO.address}
-                </p>
-                <div className="inline-block px-3 sm:px-4 py-1 rounded-full bg-royal-900 text-gold-300 font-extrabold text-[11px] sm:text-xs tracking-wider uppercase mt-2">
-                  SCHOOL LEAVING &amp; CHARACTER CERTIFICATE
-                </div>
-              </div>
 
-              {/* Certificate Body */}
-              <div className="space-y-3 leading-relaxed text-[11px] sm:text-xs">
-                <div className="flex justify-between items-center text-xs">
-                  <span>Certificate No: <strong className="font-mono">SLC-2026-{selectedStudent.id}</strong></span>
-                  <span>Date of Issue: <strong>{leaveDate}</strong></span>
-                </div>
-                <p>
-                  This is to certify that <strong>{selectedStudent.name}</strong>, Son/Daughter of{" "}
-                  <strong>{selectedStudent.father}</strong> (Father CNIC:{" "}
-                  <span className="font-mono">{selectedStudent.fatherCnic || "N/A"}</span>), was a bona
-                  fide student of this institution.
-                </p>
-                <table className="w-full border-collapse border border-slate-300 text-[10px] sm:text-[11px] my-3">
-                  <tbody>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50 w-1/3">Admission Number</td>
-                      <td className="p-2 font-mono font-bold">{selectedStudent.admNo}</td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Date of Birth (in Records)</td>
-                      <td className="p-2"><strong>{selectedStudent.dob}</strong></td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Student B-Form / CNIC</td>
-                      <td className="p-2 font-mono">{selectedStudent.bform}</td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Class to which Admitted</td>
-                      <td className="p-2 font-bold">{formatClassLabel(admClass)}</td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Date of Admission</td>
-                      <td className="p-2">{selectedStudent.admDate || "—"}</td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Class from which Withdrawn</td>
-                      <td className="p-2 font-bold">{formatClassLabel(leaveClass)}</td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">Date of Leaving School</td>
-                      <td className="p-2"><strong>{leaveDate}</strong></td>
-                    </tr>
-                    <tr className="border-b border-slate-200">
-                      <td className="p-2 font-bold bg-slate-50">General Conduct</td>
-                      <td className="p-2 font-bold text-emerald-800">{conduct}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2 font-bold bg-slate-50">Reason for Leaving</td>
-                      <td className="p-2">{reason}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p className="text-[10px] sm:text-[11px] text-slate-600 italic">
-                  All school dues have been cleared up to the date of leaving. We wish him/her success
-                  in future academic pursuits.
-                </p>
-              </div>
-
-              {/* Signatures */}
-              <div className="pt-6 sm:pt-8 flex justify-between items-end border-t border-slate-200 text-center text-[10px] sm:text-xs">
-                <div>
-                  <div className="w-20 sm:w-28 border-b border-slate-400 mx-auto mb-1"></div>
-                  <span className="font-bold text-slate-700">Class Incharge</span>
-                </div>
-                <div>
-                  <div className="w-20 sm:w-28 border-b border-slate-400 mx-auto mb-1"></div>
-                  <span className="font-bold text-slate-700">Office Clerk</span>
-                </div>
-                <div>
-                  <img
-                    src={customSign || "/principal-sign.jpg"}
-                    alt="Principal Sign"
-                    className="h-7 sm:h-9 max-w-[110px] mx-auto object-contain"
-                    style={{ mixBlendMode: "multiply" }}
-                  />
-                  <span className="font-bold text-royal-950 uppercase text-[9px] sm:text-[10px]">
-                    Principal (Seal &amp; Sign)
+                <div className="text-center my-4">
+                  <span className="px-4 py-1.5 rounded-lg bg-royal-900 text-gold-400 font-extrabold text-xs uppercase tracking-widest">
+                    School Leaving Certificate
                   </span>
+                </div>
+
+                <div className="flex flex-wrap justify-between gap-2 text-xs font-mono text-slate-600 mb-4 pb-2 border-b border-slate-200">
+                  <span>
+                    Certificate No:{" "}
+                    <strong className="text-royal-900">{slcNo}</strong>
+                  </span>
+                  <span>
+                    Admission No:{" "}
+                    <strong className="text-royal-900">
+                      {selectedStudent.admNo}
+                    </strong>
+                  </span>
+                  <span>
+                    Date of Leaving:{" "}
+                    <strong className="text-royal-900">{leaveDate}</strong>
+                  </span>
+                </div>
+
+                <div className="space-y-3.5 text-xs sm:text-sm text-slate-800 leading-relaxed">
+                  <p>
+                    This is to certify that{" "}
+                    <strong className="text-royal-900 underline">
+                      {selectedStudent.name}
+                    </strong>
+                    , son/daughter of{" "}
+                    <strong className="text-royal-900 underline">
+                      {selectedStudent.father}
+                    </strong>
+                    , bearing Student B-Form / CNIC No.{" "}
+                    <strong className="font-mono text-royal-900">
+                      {displayBform}
+                    </strong>
+                    , has been a regular and bonafide student of{" "}
+                    <strong>
+                      {SCHOOL_INFO.name} (EMIS: {SCHOOL_INFO.emis})
+                    </strong>
+                    .
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/90 p-4 rounded-xl border border-slate-200 text-xs">
+                    <div>
+                      <span className="text-slate-500 block">
+                        Date of Birth:
+                      </span>
+                      <strong className="text-royal-900">
+                        {selectedStudent.dob || "—"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">
+                        Admission Class:
+                      </span>
+                      <strong className="text-royal-900">
+                        {formatClassLabel(admClass)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">
+                        Leaving Class:
+                      </span>
+                      <strong className="text-royal-900">
+                        {formatClassLabel(leaveClass)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <p>
+                    <strong>Reason for Leaving:</strong>{" "}
+                    {reason.trim() || "School Change"}. All school dues have
+                    been cleared up to date. During their stay at this
+                    institution, their character and conduct remained{" "}
+                    <strong className="text-emerald-700">{conduct}</strong>.
+                  </p>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-slate-300 flex justify-between items-end text-xs font-bold text-slate-700">
+                  <div>
+                    <span className="border-t border-slate-400 pt-1 px-3 inline-block">
+                      Admission Incharge
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-32 h-11 mx-auto flex items-center justify-center overflow-hidden">
+                      <img
+                        src={signSrc}
+                        alt="Principal Signature"
+                        className="max-h-full max-w-full object-contain"
+                        style={{ mixBlendMode: "multiply" }}
+                      />
+                    </div>
+                    <span className="border-t border-slate-400 pt-1 px-4 inline-block text-royal-900">
+                      Principal Signature &amp; Official Stamp
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

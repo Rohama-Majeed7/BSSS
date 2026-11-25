@@ -39,6 +39,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState(initialClassFilter);
   const [statusFilter, setStatusFilter] = useState("");
+  const [groupByClass, setGroupByClass] = useState(false);
 
   const filteredStudents = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -57,6 +58,167 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
       return matchSearch && matchClass && matchStatus;
     });
   }, [students, search, classFilter, statusFilter]);
+
+  const renderStudentRow = (s: any) => {
+    const ageObj = calculateAge(s.dob);
+    const feeSt = getFeeStatus(s);
+    const netFee = getNetStudentFee(s);
+    const due = Math.max(0, netFee - Number(s.paid || 0));
+    const clsLabel = formatClassLabel(s.class);
+
+    const waMsg = `Assalam-o-Alaikum Respected ${s.father}, this is a message from ${SCHOOL_INFO.name} (EMIS: ${SCHOOL_INFO.emis}), Muzaffargarh regarding your child ${s.name} (${clsLabel}, Adm #${s.admNo}).`;
+    const waURL = buildWhatsAppURL(s.phone, waMsg);
+
+    const statusBadge =
+      s.status === "Active" ? (
+        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+          Active
+        </span>
+      ) : (
+        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
+          Left
+        </span>
+      );
+
+    const feeBadge =
+      feeSt === "Paid" ? (
+        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+          Paid
+        </span>
+      ) : feeSt === "Partial" ? (
+        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
+          Due Rs.{due}
+        </span>
+      ) : (
+        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+          Unpaid Rs.{due}
+        </span>
+      );
+
+    return (
+      <tr key={s.id} className="hover:bg-slate-50 transition align-middle">
+        <td className="p-3">
+          <div className="flex items-center gap-3">
+            <PhotoAvatar photoUrl={s.photoUrl} photo={s.photo} name={s.name} />
+            <div>
+              <div className="font-extrabold text-royal-900">{s.name}</div>
+              <div className="text-[11px] font-mono font-bold text-sky-800">
+                Adm #: {s.admNo} • {s.gender}
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <td className="p-3">
+          <div className="text-[11px] text-slate-600">
+            DOB: <strong>{s.dob}</strong>
+          </div>
+          <span className="inline-block my-0.5 px-2 py-0.5 rounded-md bg-sky-50 text-royal-800 border border-sky-200 font-bold text-[10px]">
+            Age: {ageObj.text}
+          </span>
+          <div className="font-mono text-[11px] text-slate-500">
+            B-Form: {s.bform}
+          </div>
+        </td>
+
+        <td className="p-3">
+          <div className="font-bold text-slate-800">{s.father}</div>
+          {s.fatherCnic && (
+            <div className="font-mono text-[11px] text-royal-800 font-semibold">
+              CNIC: {s.fatherCnic}
+            </div>
+          )}
+          <div
+            className="text-[11px] text-slate-500 max-w-[180px] truncate"
+            title={s.address}
+          >
+            {s.address}
+          </div>
+        </td>
+
+        <td className="p-3">
+          <div className="font-extrabold text-royal-800">{clsLabel}</div>
+          <div className="mt-1">{statusBadge}</div>
+          {s.admDate && (
+            <div className="text-[10px] text-slate-500 mt-0.5">
+              Adm: {formatClassLabel(s.admClass || s.class)} ({s.admDate})
+            </div>
+          )}
+          {(s.leaveClass || s.leaveDate) && (
+            <div className="text-[10px] text-amber-700 font-semibold">
+              Withdrawn: {formatClassLabel(s.leaveClass || s.class)}{" "}
+              {s.leaveDate ? `(${s.leaveDate})` : ""}
+            </div>
+          )}
+        </td>
+
+        <td className="p-3">
+          <div className="font-mono text-xs font-semibold text-slate-800">
+            {s.phone}
+          </div>
+          <a
+            href={waURL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px]"
+          >
+            WhatsApp
+          </a>
+        </td>
+
+        <td className="p-3">
+          <div className="font-extrabold text-slate-900">
+            Rs. {netFee.toLocaleString()}
+          </div>
+          <div className="mt-1">{feeBadge}</div>
+        </td>
+
+        <td className="p-3 text-right">
+          <ActionsDropdown
+            items={[
+              {
+                label: "Edit Student",
+                icon: <Icon name="edit" className="w-3.5 h-3.5 text-slate-500" />,
+                onClick: () => onEditStudent(s),
+              },
+              {
+                label: "View ID Card",
+                icon: <Icon name="idcard" className="w-3.5 h-3.5 text-royal-600" />,
+                onClick: () => onViewIDCard(s),
+              },
+              {
+                label: "WhatsApp ID Card",
+                icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
+                href: buildWhatsAppURL(s.phone, buildStudentIDCardWhatsAppMsg(s)),
+              },
+              {
+                label: "Exam Result (DMC)",
+                icon: <Icon name="results" className="w-3.5 h-3.5 text-amber-600" />,
+                onClick: () => onViewResult(s),
+              },
+              {
+                label: "Leaving Certificate",
+                icon: <Icon name="cert" className="w-3.5 h-3.5 text-amber-700" />,
+                onClick: () => onViewSLC(s),
+              },
+              {
+                label: "WhatsApp Message",
+                icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
+                href: waURL,
+              },
+              {
+                label: "Delete Student",
+                icon: <Icon name="trash" className="w-3.5 h-3.5 text-rose-600" />,
+                danger: true,
+                confirmMessage: `Are you sure you want to delete student "${s.name}" (Adm #${s.admNo})? All associated records will be removed.`,
+                onClick: () => onDeleteStudent(s.id),
+              },
+            ]}
+          />
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <section className="tab-panel p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
@@ -99,6 +261,23 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             <option value="Active">Active Only</option>
             <option value="Left">Left / Withdrawn</option>
           </select>
+          <button
+            type="button"
+            aria-pressed={groupByClass}
+            onClick={() => setGroupByClass((prev) => !prev)}
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition touch-manipulation whitespace-nowrap flex items-center gap-1.5 ${
+              groupByClass
+                ? "bg-royal-800 text-white border-royal-800 shadow-sm"
+                : "bg-sky-50 hover:bg-sky-100 text-royal-900 border-sky-200"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                groupByClass ? "bg-gold-400" : "bg-royal-400"
+              }`}
+            />
+            <span>Group by Class</span>
+          </button>
           <button
             type="button"
             onClick={onAdmitClick}
@@ -164,167 +343,46 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                       : "No students found matching your search and filter criteria."}
                   </td>
                 </tr>
+              ) : groupByClass ? (
+                <>
+                  {SCHOOL_CLASSES.map((c) => {
+                    const clsList = filteredStudents.filter((s) => s.class === c);
+                    if (clsList.length === 0) return null;
+                    return (
+                      <React.Fragment key={`group-${c}`}>
+                        <tr className="bg-royal-900 text-white">
+                          <td
+                            colSpan={7}
+                            className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider"
+                          >
+                            {formatClassLabel(c)} — Total Students: {clsList.length}
+                          </td>
+                        </tr>
+                        {clsList.map((s) => renderStudentRow(s))}
+                      </React.Fragment>
+                    );
+                  })}
+                  {(() => {
+                    const known = new Set<string>(SCHOOL_CLASSES);
+                    const otherList = filteredStudents.filter((s) => !known.has(s.class));
+                    if (otherList.length === 0) return null;
+                    return (
+                      <React.Fragment key="group-other">
+                        <tr className="bg-royal-900 text-white">
+                          <td
+                            colSpan={7}
+                            className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider"
+                          >
+                            Other Classes — Total Students: {otherList.length}
+                          </td>
+                        </tr>
+                        {otherList.map((s) => renderStudentRow(s))}
+                      </React.Fragment>
+                    );
+                  })()}
+                </>
               ) : (
-                filteredStudents.map((s) => {
-                  const ageObj = calculateAge(s.dob);
-                  const feeSt = getFeeStatus(s);
-                  const netFee = getNetStudentFee(s);
-                  const due = Math.max(0, netFee - Number(s.paid || 0));
-                  const clsLabel = formatClassLabel(s.class);
-
-                  const waMsg = `Assalam-o-Alaikum Respected ${s.father}, this is a message from ${SCHOOL_INFO.name} (EMIS: ${SCHOOL_INFO.emis}), Muzaffargarh regarding your child ${s.name} (${clsLabel}, Adm #${s.admNo}).`;
-                  const waURL = buildWhatsAppURL(s.phone, waMsg);
-
-                  const statusBadge =
-                    s.status === "Active" ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
-                        Left
-                      </span>
-                    );
-
-                  const feeBadge =
-                    feeSt === "Paid" ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        Paid
-                      </span>
-                    ) : feeSt === "Partial" ? (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
-                        Due Rs.{due}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
-                        Unpaid Rs.{due}
-                      </span>
-                    );
-
-                  return (
-                    <tr key={s.id} className="hover:bg-slate-50 transition align-middle">
-                      <td className="p-3">
-                        <div className="flex items-center gap-3">
-                          <PhotoAvatar photoUrl={s.photoUrl} photo={s.photo} name={s.name} />
-                          <div>
-                            <div className="font-extrabold text-royal-900">{s.name}</div>
-                            <div className="text-[11px] font-mono font-bold text-sky-800">
-                              Adm #: {s.admNo} • {s.gender}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="p-3">
-                        <div className="text-[11px] text-slate-600">
-                          DOB: <strong>{s.dob}</strong>
-                        </div>
-                        <span className="inline-block my-0.5 px-2 py-0.5 rounded-md bg-sky-50 text-royal-800 border border-sky-200 font-bold text-[10px]">
-                          Age: {ageObj.text}
-                        </span>
-                        <div className="font-mono text-[11px] text-slate-500">
-                          B-Form: {s.bform}
-                        </div>
-                      </td>
-
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800">{s.father}</div>
-                        {s.fatherCnic && (
-                          <div className="font-mono text-[11px] text-royal-800 font-semibold">
-                            CNIC: {s.fatherCnic}
-                          </div>
-                        )}
-                        <div
-                          className="text-[11px] text-slate-500 max-w-[180px] truncate"
-                          title={s.address}
-                        >
-                          {s.address}
-                        </div>
-                      </td>
-
-                      <td className="p-3">
-                        <div className="font-extrabold text-royal-800">{clsLabel}</div>
-                        <div className="mt-1">{statusBadge}</div>
-                        {s.admDate && (
-                          <div className="text-[10px] text-slate-500 mt-0.5">
-                            Adm: {formatClassLabel(s.admClass || s.class)} ({s.admDate})
-                          </div>
-                        )}
-                        {(s.leaveClass || s.leaveDate) && (
-                          <div className="text-[10px] text-amber-700 font-semibold">
-                            Withdrawn: {formatClassLabel(s.leaveClass || s.class)}{" "}
-                            {s.leaveDate ? `(${s.leaveDate})` : ""}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="p-3">
-                        <div className="font-mono text-xs font-semibold text-slate-800">
-                          {s.phone}
-                        </div>
-                        <a
-                          href={waURL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-1 inline-block px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px]"
-                        >
-                          WhatsApp
-                        </a>
-                      </td>
-
-                      <td className="p-3">
-                        <div className="font-extrabold text-slate-900">
-                          Rs. {netFee.toLocaleString()}
-                        </div>
-                        <div className="mt-1">{feeBadge}</div>
-                      </td>
-
-                      <td className="p-3 text-right">
-                        <ActionsDropdown
-                          items={[
-                            {
-                              label: "Edit Student",
-                              icon: <Icon name="edit" className="w-3.5 h-3.5 text-slate-500" />,
-                              onClick: () => onEditStudent(s),
-                            },
-                            {
-                              label: "View ID Card",
-                              icon: <Icon name="idcard" className="w-3.5 h-3.5 text-royal-600" />,
-                              onClick: () => onViewIDCard(s),
-                            },
-                            {
-                              label: "WhatsApp ID Card",
-                              icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
-                              href: buildWhatsAppURL(s.phone, buildStudentIDCardWhatsAppMsg(s)),
-                            },
-                            {
-                              label: "Exam Result (DMC)",
-                              icon: <Icon name="results" className="w-3.5 h-3.5 text-amber-600" />,
-                              onClick: () => onViewResult(s),
-                            },
-                            {
-                              label: "Leaving Certificate",
-                              icon: <Icon name="cert" className="w-3.5 h-3.5 text-amber-700" />,
-                              onClick: () => onViewSLC(s),
-                            },
-                            {
-                              label: "WhatsApp Message",
-                              icon: <Icon name="whatsapp" className="w-3.5 h-3.5 text-emerald-600" />,
-                              href: waURL,
-                            },
-                            {
-                              label: "Delete Student",
-                              icon: <Icon name="trash" className="w-3.5 h-3.5 text-rose-600" />,
-                              danger: true,
-                              confirmMessage: `Are you sure you want to delete student "${s.name}" (Adm #${s.admNo})? All associated records will be removed.`,
-                              onClick: () => onDeleteStudent(s.id),
-                            },
-                          ]}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })
+                filteredStudents.map((s) => renderStudentRow(s))
               )}
             </tbody>
           </table>

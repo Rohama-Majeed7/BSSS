@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { SCHOOL_CLASSES } from "@/lib/constants";
-import { formatClassLabel, calculateAge, getNameInitials } from "@/lib/utils";
+import { formatClassLabel, calculateAge, getNameInitials, formatCNIC } from "@/lib/utils";
 import {
   uploadPhotoToNeon,
   deletePhotoFromServer,
@@ -75,11 +75,11 @@ export const StudentModal: React.FC<StudentModalProps> = ({
       setName(editStudent.name || "");
       setAdmNo(editStudent.admNo || "");
       setFather(editStudent.father || "");
-      setFatherCnic(editStudent.fatherCnic || "");
+      setFatherCnic(formatCNIC(editStudent.fatherCnic || ""));
       setCls(editStudent.class || "Nursery");
       setGender(editStudent.gender || "Male");
       setDob(editStudent.dob || "");
-      setBform(editStudent.bform || "");
+      setBform(formatCNIC(editStudent.bform || ""));
       setAdmClass(editStudent.admClass || editStudent.class || "Nursery");
       setAdmDate(editStudent.admDate || new Date().toISOString().split("T")[0]);
       setLeaveClass(editStudent.leaveClass || "");
@@ -534,9 +534,11 @@ export const StudentModal: React.FC<StudentModalProps> = ({
               <label className="block font-bold text-slate-700 mb-1">Student B-Form # *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={15}
                 required
                 value={bform}
-                onChange={(e) => setBform(e.target.value)}
+                onChange={(e) => setBform(formatCNIC(e.target.value))}
                 placeholder="32303-1234567-1"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-royal-500 font-mono"
               />
@@ -545,9 +547,11 @@ export const StudentModal: React.FC<StudentModalProps> = ({
               <label className="block font-bold text-slate-700 mb-1">Father CNIC No *</label>
               <input
                 type="text"
+                inputMode="numeric"
+                maxLength={15}
                 required
                 value={fatherCnic}
-                onChange={(e) => setFatherCnic(e.target.value)}
+                onChange={(e) => setFatherCnic(formatCNIC(e.target.value))}
                 placeholder="32303-1234567-1"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-royal-500 font-mono"
               />

@@ -112,6 +112,8 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
 
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any>(null);
+  const [slcStudentId, setSlcStudentId] = useState<number | null>(null);
+  const [slcSelectKey, setSlcSelectKey] = useState(0);
 
   // Document modal preview state
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
@@ -642,6 +644,10 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
                 setEditingStudent(null);
                 setIsStudentModalOpen(true);
               }}
+              onEnterMarksClick={() => {
+                setEditingResult(null);
+                setIsResultModalOpen(true);
+              }}
               onPrintSummary={handlePrintExecutiveSummary}
               onPrintStudentRegister={handlePrintStudentRegister}
               onPrintFeeRegister={handlePrintFeeRegister}
@@ -675,7 +681,11 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
                   setIsResultModalOpen(true);
                 }
               }}
-              onViewSLC={() => switchTab("slc")}
+              onViewSLC={(s) => {
+                setSlcStudentId(s.id);
+                setSlcSelectKey((k) => k + 1);
+                switchTab("slc");
+              }}
               initialClassFilter={studentsClassFilter}
             />
           )}
@@ -757,10 +767,9 @@ export default function SMSApp({ initialTab, initialSearchParams }: SMSAppProps)
           {activeTab === "slc" && (
             <SLCView
               students={students}
+              initialStudentId={slcStudentId}
+              initialSelectKey={slcSelectKey}
               onSaveSLC={handleSaveSLC}
-              onPrintSLC={() => {
-                window.print();
-              }}
               onShowToast={showToast}
               customLogo={customLogo}
               customSign={customSign}
