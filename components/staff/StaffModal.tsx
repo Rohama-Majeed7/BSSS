@@ -31,6 +31,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
   const [role, setRole] = useState("");
   const [cnic, setCnic] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [basic, setBasic] = useState<number>(35000);
   const [allowance, setAllowance] = useState<number>(2500);
   const [deduction, setDeduction] = useState<number>(0);
@@ -75,6 +76,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
       setRole(editTeacher.role || "");
       setCnic(formatCNIC(editTeacher.cnic || ""));
       setPhone(editTeacher.phone || "");
+      setAddress(editTeacher.address || "");
       setBasic(Number(editTeacher.basic || 35000));
       setAllowance(Number(editTeacher.allowance || 0));
       setDeduction(Number(editTeacher.deduction || 0));
@@ -91,6 +93,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
       setRole("Senior Science Teacher");
       setCnic("");
       setPhone("");
+      setAddress("");
       setBasic(35000);
       setAllowance(2500);
       setDeduction(0);
@@ -203,6 +206,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
         role,
         cnic,
         phone,
+        address,
         basic,
         allowance,
         deduction,
@@ -382,6 +386,17 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-royal-500 font-mono"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Residential Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="e.g. Basti Jaisal Wain, Jhang Road, Muzaffargarh"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-royal-500"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

@@ -114,6 +114,11 @@ export const StaffView: React.FC<StaffViewProps> = ({
                       <td className="p-3">
                         <div className="font-bold text-royal-800">{t.role}</div>
                         <div className="text-[11px] font-mono text-slate-500">CNIC: {t.cnic}</div>
+                        {t.address && (
+                          <div className="text-[11px] text-slate-500 max-w-[200px] whitespace-normal break-words leading-snug" title={t.address}>
+                            {t.address}
+                          </div>
+                        )}
                       </td>
 
                       <td className="p-3 text-center">

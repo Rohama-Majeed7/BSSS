@@ -129,7 +129,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </div>
           )}
           <div
-            className="text-[11px] text-slate-500 max-w-[180px] truncate"
+            className="text-[11px] text-slate-500 max-w-[200px] whitespace-normal break-words leading-snug"
             title={s.address}
           >
             {s.address}

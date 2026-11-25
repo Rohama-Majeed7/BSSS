@@ -7,6 +7,7 @@ export interface StaffRecord {
   role: string;
   cnic: string;
   phone: string;
+  address?: string | null;
   basic: number;
   allowance: number;
   deduction: number;
@@ -25,6 +26,7 @@ export interface StaffPayload {
   role: string;
   cnic?: string;
   phone?: string;
+  address?: string | null;
   basic?: number;
   allowance?: number;
   deduction?: number;

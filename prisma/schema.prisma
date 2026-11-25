@@ -111,6 +111,7 @@ model Teacher {
   role       String   // Designation (e.g. "Senior Physics Teacher")
   cnic       String   // CNIC No
   phone      String   // Phone / WhatsApp No
+  address    String   @default("") // Residential Address
   basic      Float    // Basic Monthly Salary
   allowance  Float    @default(0) // Monthly Allowances
   deduction  Float    @default(0) // Monthly Deductions

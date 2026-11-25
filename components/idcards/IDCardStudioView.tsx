@@ -232,9 +232,12 @@ export const IDCardStudioView: React.FC<IDCardStudioViewProps> = ({
                   </div>
 
                   {/* Footer with Official Signature */}
-                  <div className="id-card-divider bg-slate-50 border-t border-slate-200 px-3 py-1.5 flex justify-between items-center text-[9px]">
-                    <div className="id-card-muted text-left text-slate-500 font-semibold truncate pr-2">
-                      {SCHOOL_INFO.address}
+                  <div className="id-card-divider bg-slate-50 border-t border-slate-200 px-3 py-1.5 flex justify-between items-end text-[9px] gap-2">
+                    <div
+                      className="id-card-muted text-left text-slate-500 font-semibold whitespace-normal break-words leading-tight min-w-0 flex-1"
+                      title={s.address || ""}
+                    >
+                      {s.address ? `Address: ${s.address}` : "Address: —"}
                     </div>
                     <div className="text-right flex-shrink-0">
                       <img
@@ -345,9 +348,12 @@ export const IDCardStudioView: React.FC<IDCardStudioViewProps> = ({
                 </div>
 
                 {/* Footer with Official Signature */}
-                <div className="id-card-divider bg-slate-50 border-t border-slate-200 px-3 py-1.5 flex justify-between items-center text-[9px]">
-                  <div className="id-card-muted text-left text-slate-500 font-semibold truncate pr-2">
-                    {SCHOOL_INFO.address}
+                <div className="id-card-divider bg-slate-50 border-t border-slate-200 px-3 py-1.5 flex justify-between items-end text-[9px] gap-2">
+                  <div
+                    className="id-card-muted text-left text-slate-500 font-semibold whitespace-normal break-words leading-tight min-w-0 flex-1"
+                    title={t.address || ""}
+                  >
+                    {t.address ? `Address: ${t.address}` : "Address: —"}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <img
